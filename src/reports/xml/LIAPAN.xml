@@ -1,0 +1,2226 @@
+<?xml version="1.0" encoding="WINDOWS-1252" ?>
+<report name="LIAPAN" DTDVersion="9.0.2.0.10"
+ beforeParameterFormTrigger="beforepform" beforeReportTrigger="beforereport"
+ afterReportTrigger="afterreport" designInCharacterUnits="yes">
+  <xmlSettings xmlTag="LIAPAN" xmlPrologType="text">
+  <![CDATA[<?xml version="1.0"?>]]>
+  </xmlSettings>
+  <comment>
+  <![CDATA[NOMBRE
+  LIBRO APORTES CLIENTES DIAS ANTERIORES
+
+MODIFICADO
+  DESA                07-OCT-1997Creado por
+                                 Generador de Oracle Reports v2.5.10.0.0]]>
+  </comment>
+  <reportHtmlEscapes>
+    <beforeReportHtmlEscape>
+    <![CDATA[<html>
+<body bgcolor="#ffffff">
+]]>
+    </beforeReportHtmlEscape>
+    <beforePageHtmlEscape>
+    <![CDATA[#NULL#]]>
+    </beforePageHtmlEscape>
+    <afterPageHtmlEscape>
+    <![CDATA[<hr size=5 noshade>
+]]>
+    </afterPageHtmlEscape>
+    <beforeFormHtmlEscape>
+    <![CDATA[<html>
+<body bgcolor="#ffffff">
+<form method=post action="_action_">
+<input name="hidden_run_parameters" type=hidden value="_hidden_">
+<center>
+<p><table border=0 cellspacing=0 cellpadding=0>
+<tr>
+<td><input type=submit></td>
+<td width=15>
+<td><input type=reset></td>
+</tr>
+</table>
+<p><hr><p>
+]]>
+    </beforeFormHtmlEscape>
+    <pageNavigationHtmlEscape>
+    <![CDATA[<HTML>
+<TITLE>Oracle HTML Navigator</TITLE>
+<HEAD>
+<SCRIPT LANGUAGE = "JavaScript">
+
+var jump_index = 1			// Jump to this page
+var num_pages = &TotalPages			// Total number of pages
+var basefilename = "&file_name"		// Base file name
+var fileext = "&file_ext"		//File extension
+
+/* jumps to "new_page" */
+function new_page(form, new_page)
+{
+	form.reqpage.value = new_page;
+	parent.frames[0].location = basefilename + "_" + new_page + "."+fileext;
+}
+
+/* go back one page */
+function back(form)
+{
+	/* if we are not in first page */
+	if (jump_index > 1)
+	{
+		jump_index--;
+		new_page(form, jump_index);
+	}
+}
+
+/* go forward one page */
+function forward(form)
+{
+	/* if we are not in last page */
+	if (jump_index < num_pages)
+	{
+		jump_index++;
+		new_page(form, jump_index);
+	}
+}
+
+/* go to first page */
+function first(form)
+{
+	if(jump_index != 1)
+	{
+		jump_index = 1;
+		new_page(form, jump_index);
+	}
+}
+
+/* go to last page */
+function last(form)
+{
+	if(jump_index != num_pages)
+	{
+		jump_index = num_pages;
+		new_page(form, jump_index);
+	}
+}
+
+/* go to the user specified page number */
+function pagenum(form)
+{
+	/* sanity check */
+	if (form.reqpage.value < 1)
+	{
+		form.reqpage.value = 1;
+	}
+	if (form.reqpage.value > num_pages)
+	{
+		form.reqpage.value = num_pages;
+	}
+	jump_index = form.reqpage.value;
+	new_page(form, jump_index);
+}
+</SCRIPT>
+</HEAD>
+
+<BODY>
+<FORM NAME="ThisForm" onSubmit="pagenum(this); return false;">
+<center><table><tr>
+<td> <INPUT TYPE="button"  VALUE="<< " onClick="first(this.form)">
+<td> <INPUT TYPE="button"  VALUE=" < " onClick="back(this.form)">
+<td> <INPUT TYPE="button"  VALUE="Page:" onClick="pagenum(this.form)">
+<td> <INPUT NAME="reqpage" VALUE="1" SIZE=2>
+<td> <INPUT TYPE="button"  VALUE=" > " onClick="forward(this.form)">
+<td> <INPUT TYPE="button"  VALUE=" >>" onClick="last(this.form)">
+</table></center>
+</FORM></BODY>
+</HTML>
+]]>
+    </pageNavigationHtmlEscape>
+  </reportHtmlEscapes>
+  <data>
+    <userParameter name="CG$P_SYSDATE" datatype="date" width="11"
+     precision="10" inputMask="DD-MON-YYYY" defaultWidth="0" defaultHeight="0"
+     display="no"/>
+    <userParameter name="QUE_FONDO" datatype="character" width="15"
+     label="Fondo" defaultWidth="0" defaultHeight="0">
+      <listOfValues restrictToList="no">
+        <selectStatement hideFirstColumn="no">
+        <![CDATA[SELECT FON_CODIGO,FON_RAZON_SOCIAL
+FROM FONDOS
+WHERE (FON_TIPO = 'A'
+OR (FON_TIPO IN ('C','E') AND
+       TRUNC(FON_FECHA_FINALIZACION) >= TRUNC(SYSDATE)))
+AND FON_ESTADO = 'A'
+ORDER BY 2 ]]>
+        </selectStatement>
+      </listOfValues>
+    </userParameter>
+    <userParameter name="QUE_SUCURSAL" datatype="character" width="5"
+     validationTrigger="que_sucursalvalidtrigger" label="Sucursal"
+     defaultWidth="0" defaultHeight="0"/>
+    <userParameter name="QUE_CORREDOR" datatype="character" width="3"
+     label="Corredor" defaultWidth="0" defaultHeight="0"/>
+    <userParameter name="QUE_FECHA" datatype="date" width="11"
+     inputMask="DD-MON-YYYY" label="Fecha" defaultWidth="0" defaultHeight="0"
+    />
+    <userParameter name="QTIPO" datatype="character" width="1" precision="10"
+     initialValue="D" defaultWidth="0" defaultHeight="0"/>
+    <userParameter name="Q_TIPODESC" datatype="character" width="30"
+     precision="10" defaultWidth="0" defaultHeight="0"/>
+    <userParameter name="P_TABLA" datatype="character" width="100"
+     precision="10" initialValue="MOVIMIENTOS_CUENTAS_FONDOS" defaultWidth="0"
+     defaultHeight="0"/>
+    <userParameter name="Q_TIPOMOV" datatype="character" width="2"
+     precision="10" defaultWidth="0" defaultHeight="0"/>
+    <systemParameter name="MODE" initialValue="Character"/>
+    <systemParameter name="DESNAME" display="yes"/>
+    <systemParameter name="DESTYPE" initialValue="Preview" display="yes"/>
+    <dataSource name="CG$Q_MCF3">
+      <select>
+      <![CDATA[SELECT  MCF3.MCF_CONSECUTIVO                                                                     ,
+		MCF3.MCF_FECHA MCF_FECHA                                                                       ,
+		MCF3.MCF_SALDO_CAPITAL MCF_SALDO_CAPITAL                                                       ,
+		MCF3.MCF_SALDO_INVER MCF_SALDO_INVER1                                                          ,
+		MCF3.MCF_SALDO_RENDIMIENTOS_RF MCF_SALDO_RENDIMIENTOS_RF3                                      ,
+		MCF3.MCF_SALDO_RENDIMIENTOS_RV MCF_SALDO_RENDIMIENTOS_RV4                                      ,
+		MCF3.MCF_SALDO_RETEFUENTE MCF_SALDO_RETEFUENTE5                                                ,
+		MCF3.MCF_SALDO_UNIDADES MCF_SALDO_UNIDADES2                                                    ,
+		MCF3.MCF_CFO_CCC_CLI_PER_TID_CODIGO                                                            ,
+		MCF3.MCF_CFO_CCC_CLI_PER_NUM_IDEN                                                              ,
+		MCF3.MCF_CFO_CCC_NUMERO_CUENTA                                                                 ,
+		MCF3.MCF_CFO_FON_CODIGO                                                                        ,
+		MCF3.MCF_CFO_CODIGO                                                                            ,
+		CCC.CCC_NOMBRE_CUENTA CCC_TITULAR_CUENTA                                                       ,
+		PER5.PER_DIGITO_CONTROL                                                                        ,
+		PER4.PER_INICIALES_USUARIO PER_INICIALES_USUARIO                                               ,
+		SUC6.SUC_CODIGO SUC_CODIGO                                                                     ,
+		SUC6.SUC_NOMBRE SUC_NOMBRE1                                                                    ,
+		PER4.PER_PRIMER_APELLIDO || ' ' || PER4.PER_SEGUNDO_APELLIDO|| ' ' || PER4.PER_NOMBRE COMERCIAL,
+		CPR.CPR_DESCRIPCION MESA
+	FROM
+		&P_TABLA MCF3                  ,
+		CUENTAS_CLIENTE_CORREDORES CCC ,
+		CUENTAS_FONDOS CFO             ,
+		PERSONAS PER4                  ,
+		PERSONAS PER5                  ,
+		SUCURSALES SUC6                ,
+		PERSONAS_CENTROS_PRODUCCION PCP,
+		CENTROS_PRODUCCION CPR
+	WHERE MCF3.MCF_CFO_CCC_CLI_PER_TID_CODIGO = CCC.CCC_CLI_PER_TID_CODIGO
+	AND MCF3.MCF_CFO_CCC_CLI_PER_NUM_IDEN     = CCC.CCC_CLI_PER_NUM_IDEN
+	AND MCF3.MCF_CFO_CCC_NUMERO_CUENTA        = CCC.CCC_NUMERO_CUENTA
+	AND MCF3.MCF_CFO_CCC_CLI_PER_NUM_IDEN     = CFO.CFO_CCC_CLI_PER_NUM_IDEN
+	AND MCF3.MCF_CFO_CCC_CLI_PER_TID_CODIGO   = CFO.CFO_CCC_CLI_PER_TID_CODIGO
+	AND MCF3.MCF_CFO_CCC_NUMERO_CUENTA        = CFO.CFO_CCC_NUMERO_CUENTA
+	AND MCF3.MCF_CFO_FON_CODIGO               = CFO.CFO_FON_CODIGO
+	AND MCF3.MCF_CFO_CODIGO                   = CFO.CFO_CODIGO
+	AND(( :Q_TIPOMOV                         IN( 'D', 'C', 'CR' )
+	AND MCF3.MCF_TMF_MNEMONICO                = :Q_TIPOMOV )
+	OR( :Q_TIPOMOV                            = 'O'
+	AND MCF3.MCF_CONSECUTIVO                  =
+		(SELECT  MAX( MCF4.MCF_CONSECUTIVO )
+			FROM
+				&P_TABLA MCF4
+			WHERE MCF4.MCF_CFO_CCC_CLI_PER_NUM_IDEN = CFO.CFO_CCC_CLI_PER_NUM_IDEN
+			AND MCF4.MCF_CFO_CCC_CLI_PER_TID_CODIGO = CFO.CFO_CCC_CLI_PER_TID_CODIGO
+			AND MCF4.MCF_CFO_CCC_NUMERO_CUENTA      = CFO.CFO_CCC_NUMERO_CUENTA
+			AND MCF4.MCF_CFO_FON_CODIGO             = CFO.CFO_FON_CODIGO
+			AND MCF4.MCF_CFO_CODIGO                 = CFO.CFO_CODIGO
+		)
+	AND MCF3.MCF_SALDO_INVER       > 0 ) )
+	AND CCC.CCC_CLI_PER_NUM_IDEN   = PER5.PER_NUM_IDEN
+	AND CCC.CCC_CLI_PER_TID_CODIGO = PER5.PER_TID_CODIGO
+	AND PER4.PER_NUM_IDEN          = CCC.CCC_PER_NUM_IDEN
+	AND PER4.PER_TID_CODIGO        = CCC.CCC_PER_TID_CODIGO
+	AND PER4.PER_INICIALES_USUARIO LIKE UPPER( :QUE_CORREDOR )
+	AND TO_CHAR( SUC6.SUC_CODIGO ) LIKE :QUE_SUCURSAL
+	AND SUC6.SUC_CODIGO      = PER4.PER_SUC_CODIGO
+	AND PCP.PCP_PER_NUM_IDEN = PER4.PER_NUM_IDEN
+	AND CPR.CPR_MNEMONICO    = PCP.PCP_CPR_MNEMONICO
+	--AND BSC.BSC_MNEMONICO    = CLI.CLI_BSC_MNEMONICO
+	AND PCP.PCP_PRINCIPAL    = 'S'
+	ORDER BY CCC_TITULAR_CUENTA]]>
+      </select>
+      <displayInfo x="4.00867" y="0.18872" width="1.93750" height="0.50000"/>
+      <group name="G_SUC">
+        <displayInfo x="3.68054" y="1.35522" width="2.59033" height="1.79785"
+        />
+        <dataItem name="SUC_NOMBRE1" datatype="vchar2" columnOrder="23"
+         width="40" defaultWidth="400000" defaultHeight="10000"
+         columnFlags="1" defaultLabel="Sucursal">
+          <dataDescriptor expression="SUC6.SUC_NOMBRE"
+           descriptiveExpression="SUC_NOMBRE1" order="18" width="40"/>
+          <dataItemPrivate adtName="" schemaName=""/>
+        </dataItem>
+        <dataItem name="SUC_CODIGO" oracleDatatype="number" columnOrder="22"
+         width="22" defaultWidth="70000" defaultHeight="10000" columnFlags="0"
+         defaultLabel="Codigo" breakOrder="none">
+          <dataDescriptor expression="SUC6.SUC_CODIGO"
+           descriptiveExpression="SUC_CODIGO" order="17"
+           oracleDatatype="number" width="22" precision="5"/>
+          <dataItemPrivate adtName="" schemaName=""/>
+        </dataItem>
+        <summary name="CS_SUC_CAPITAL" source="MCF_SALDO_CAPITAL"
+         function="sum" width="24" precision="22" scale="2" reset="G_SUC"
+         compute="G_SUC" defaultWidth="240000" defaultHeight="10000"
+         columnFlags="8" defaultLabel="Cs Suc Capital">
+          <displayInfo x="0.00000" y="0.00000" width="0.00000"
+           height="0.00000"/>
+        </summary>
+        <summary name="CS_SUC_INV" source="MCF_SALDO_INVER1" function="sum"
+         width="24" precision="22" scale="2" reset="G_SUC" compute="G_SUC"
+         defaultWidth="240000" defaultHeight="10000" columnFlags="8"
+         defaultLabel="Cs Suc Inv">
+          <displayInfo x="0.00000" y="0.00000" width="0.00000"
+           height="0.00000"/>
+        </summary>
+        <summary name="CS_SUC_RENRF" source="MCF_SALDO_RENDIMIENTOS_RF3"
+         function="sum" width="24" precision="22" scale="2" reset="G_SUC"
+         compute="G_SUC" defaultWidth="240000" defaultHeight="10000"
+         columnFlags="8" defaultLabel="Cs Suc Renrf">
+          <displayInfo x="0.00000" y="0.00000" width="0.00000"
+           height="0.00000"/>
+        </summary>
+        <summary name="CS_SUC_RENRV" source="MCF_SALDO_RENDIMIENTOS_RV4"
+         function="sum" width="24" precision="22" scale="2" reset="G_SUC"
+         compute="G_SUC" defaultWidth="240000" defaultHeight="10000"
+         columnFlags="8" defaultLabel="Cs Suc Renrv">
+          <displayInfo x="0.00000" y="0.00000" width="0.00000"
+           height="0.00000"/>
+        </summary>
+        <summary name="CS_SUC_RTEFTE" source="CF_RETENCION" function="sum"
+         width="24" precision="22" scale="2" reset="G_SUC" compute="G_SUC"
+         defaultWidth="240000" defaultHeight="10000" columnFlags="8"
+         defaultLabel="Cs Suc Rtefte">
+          <displayInfo x="0.00000" y="0.00000" width="0.00000"
+           height="0.00000"/>
+        </summary>
+        <summary name="CS_SUC_UDS" source="MCF_SALDO_UNIDADES2" function="sum"
+         width="20" precision="18" scale="8" reset="G_SUC" compute="G_SUC"
+         defaultWidth="200000" defaultHeight="10000" columnFlags="8"
+         defaultLabel="Cs Suc Uds">
+          <displayInfo x="0.00000" y="0.00000" width="0.00000"
+           height="0.00000"/>
+        </summary>
+        <summary name="CS_RENDIMIENTOS_SUC" source="CP_RENDIMIENTOS"
+         function="sum" width="24" precision="22" reset="G_SUC"
+         compute="report" defaultWidth="90000" defaultHeight="10000"
+         columnFlags="8" defaultLabel="Cs Rendimientos Suc">
+          <displayInfo x="0.00000" y="0.00000" width="0.00000"
+           height="0.00000"/>
+        </summary>
+      </group>
+      <group name="APORTES">
+        <displayInfo x="3.51709" y="3.69873" width="2.90979" height="4.01953"
+        />
+        <dataItem name="COMERCIAL" datatype="vchar2" columnOrder="68"
+         width="62" defaultWidth="100000" defaultHeight="10000"
+         columnFlags="0" defaultLabel="Comercial" breakOrder="none">
+          <dataDescriptor
+           expression="PER4.PER_PRIMER_APELLIDO || &apos; &apos; || PER4.PER_SEGUNDO_APELLIDO || &apos; &apos; || PER4.PER_NOMBRE"
+           descriptiveExpression="COMERCIAL" order="19" width="62"/>
+          <dataItemPrivate adtName="" schemaName=""/>
+        </dataItem>
+        <dataItem name="MESA" datatype="vchar2" columnOrder="69" width="40"
+         defaultWidth="100000" defaultHeight="10000" columnFlags="0"
+         defaultLabel="Mesa" breakOrder="none">
+          <dataDescriptor expression="CPR.CPR_DESCRIPCION"
+           descriptiveExpression="MESA" order="20" width="40"/>
+          <dataItemPrivate adtName="" schemaName=""/>
+        </dataItem>
+        <dataItem name="MCF_CONSECUTIVO" oracleDatatype="number"
+         columnOrder="67" width="22" defaultWidth="20000"
+         defaultHeight="10000" columnFlags="1" defaultLabel="Mcf Consecutivo">
+          <dataDescriptor expression="MCF3.MCF_CONSECUTIVO"
+           descriptiveExpression="MCF_CONSECUTIVO" order="1"
+           oracleDatatype="number" width="22" scale="-127"/>
+          <dataItemPrivate adtName="" schemaName=""/>
+        </dataItem>
+        <dataItem name="CCC_TITULAR_CUENTA" datatype="vchar2" columnOrder="20"
+         width="62" defaultWidth="400000" defaultHeight="10000"
+         columnFlags="33" defaultLabel="Titular Cuenta">
+          <dataDescriptor expression="CCC.CCC_NOMBRE_CUENTA"
+           descriptiveExpression="CCC_TITULAR_CUENTA" order="14" width="62"/>
+          <dataItemPrivate adtName="" schemaName=""/>
+        </dataItem>
+        <formula name="CUENTA" source="cuentaformula" datatype="character"
+         width="30" precision="10" defaultWidth="0" defaultHeight="0"
+         columnFlags="16" breakOrder="none">
+          <displayInfo x="0.00000" y="0.00000" width="0.00000"
+           height="0.00000"/>
+        </formula>
+        <dataItem name="MCF_SALDO_CAPITAL" oracleDatatype="number"
+         columnOrder="14" width="22" defaultWidth="240000"
+         defaultHeight="10000" columnFlags="32" defaultLabel="Saldo Capital"
+         breakOrder="none">
+          <dataDescriptor expression="MCF3.MCF_SALDO_CAPITAL"
+           descriptiveExpression="MCF_SALDO_CAPITAL" order="3"
+           oracleDatatype="number" width="22" scale="2" precision="22"/>
+          <dataItemPrivate adtName="" schemaName=""/>
+        </dataItem>
+        <dataItem name="MCF_SALDO_INVER1" oracleDatatype="number"
+         columnOrder="15" width="22" defaultWidth="240000"
+         defaultHeight="10000" columnFlags="32" defaultLabel="Saldo Inver"
+         breakOrder="none">
+          <dataDescriptor expression="MCF3.MCF_SALDO_INVER"
+           descriptiveExpression="MCF_SALDO_INVER1" order="4"
+           oracleDatatype="number" width="22" scale="2" precision="22"/>
+          <dataItemPrivate adtName="" schemaName=""/>
+        </dataItem>
+        <dataItem name="MCF_SALDO_RENDIMIENTOS_RF3" oracleDatatype="number"
+         columnOrder="16" width="22" defaultWidth="240000"
+         defaultHeight="10000" columnFlags="32"
+         defaultLabel="Saldo Rendimientos Rf" breakOrder="none">
+          <dataDescriptor expression="MCF3.MCF_SALDO_RENDIMIENTOS_RF"
+           descriptiveExpression="MCF_SALDO_RENDIMIENTOS_RF3" order="5"
+           oracleDatatype="number" width="22" scale="2" precision="22"/>
+          <dataItemPrivate adtName="" schemaName=""/>
+        </dataItem>
+        <dataItem name="MCF_SALDO_RENDIMIENTOS_RV4" oracleDatatype="number"
+         columnOrder="17" width="22" defaultWidth="240000"
+         defaultHeight="10000" columnFlags="32"
+         defaultLabel="Saldo Rendimientos Rv" breakOrder="none">
+          <dataDescriptor expression="MCF3.MCF_SALDO_RENDIMIENTOS_RV"
+           descriptiveExpression="MCF_SALDO_RENDIMIENTOS_RV4" order="6"
+           oracleDatatype="number" width="22" scale="2" precision="22"/>
+          <dataItemPrivate adtName="" schemaName=""/>
+        </dataItem>
+        <dataItem name="MCF_SALDO_RETEFUENTE5" oracleDatatype="number"
+         columnOrder="18" width="22" defaultWidth="240000"
+         defaultHeight="10000" columnFlags="32"
+         defaultLabel="Saldo Retefuente" breakOrder="none">
+          <dataDescriptor expression="MCF3.MCF_SALDO_RETEFUENTE"
+           descriptiveExpression="MCF_SALDO_RETEFUENTE5" order="7"
+           oracleDatatype="number" width="22" scale="2" precision="22"/>
+          <dataItemPrivate adtName="" schemaName=""/>
+        </dataItem>
+        <dataItem name="MCF_SALDO_UNIDADES2" oracleDatatype="number"
+         columnOrder="19" width="22" defaultWidth="200000"
+         defaultHeight="10000" columnFlags="32" defaultLabel="Saldo Unidades"
+         breakOrder="none">
+          <dataDescriptor expression="MCF3.MCF_SALDO_UNIDADES"
+           descriptiveExpression="MCF_SALDO_UNIDADES2" order="8"
+           oracleDatatype="number" width="22" scale="8" precision="18"/>
+          <dataItemPrivate adtName="" schemaName=""/>
+        </dataItem>
+        <dataItem name="PER_INICIALES_USUARIO" datatype="vchar2"
+         columnOrder="21" width="3" defaultWidth="30000" defaultHeight="10000"
+         columnFlags="32" defaultLabel="Corr" breakOrder="none">
+          <dataDescriptor expression="PER4.PER_INICIALES_USUARIO"
+           descriptiveExpression="PER_INICIALES_USUARIO" order="16" width="3"
+          />
+          <dataItemPrivate adtName="" schemaName=""/>
+        </dataItem>
+        <dataItem name="MCF_FECHA" datatype="date" oracleDatatype="date"
+         columnOrder="13" width="9" defaultWidth="90000" defaultHeight="10000"
+         columnFlags="0" defaultLabel="Fecha" breakOrder="none">
+          <dataDescriptor expression="MCF3.MCF_FECHA"
+           descriptiveExpression="MCF_FECHA" order="2" oracleDatatype="date"
+           width="9"/>
+          <dataItemPrivate adtName="" schemaName=""/>
+        </dataItem>
+        <dataItem name="MCF_CFO_CCC_CLI_PER_TID_CODIGO" datatype="vchar2"
+         columnOrder="52" width="3" defaultWidth="30000" defaultHeight="10000"
+         columnFlags="1" defaultLabel="Mcf Cfo Ccc Cli Per Tid Codigo">
+          <dataDescriptor expression="MCF3.MCF_CFO_CCC_CLI_PER_TID_CODIGO"
+           descriptiveExpression="MCF_CFO_CCC_CLI_PER_TID_CODIGO" order="9"
+           width="3"/>
+          <dataItemPrivate adtName="" schemaName=""/>
+        </dataItem>
+        <dataItem name="MCF_CFO_CCC_CLI_PER_NUM_IDEN" datatype="vchar2"
+         columnOrder="53" width="15" defaultWidth="90000"
+         defaultHeight="10000" columnFlags="1"
+         defaultLabel="Mcf Cfo Ccc Cli Per Num Iden">
+          <dataDescriptor expression="MCF3.MCF_CFO_CCC_CLI_PER_NUM_IDEN"
+           descriptiveExpression="MCF_CFO_CCC_CLI_PER_NUM_IDEN" order="10"
+           width="15"/>
+          <dataItemPrivate adtName="" schemaName=""/>
+        </dataItem>
+        <dataItem name="MCF_CFO_CCC_NUMERO_CUENTA" oracleDatatype="number"
+         columnOrder="54" width="22" defaultWidth="40000"
+         defaultHeight="10000" columnFlags="1"
+         defaultLabel="Mcf Cfo Ccc Numero Cuenta">
+          <dataDescriptor expression="MCF3.MCF_CFO_CCC_NUMERO_CUENTA"
+           descriptiveExpression="MCF_CFO_CCC_NUMERO_CUENTA" order="11"
+           oracleDatatype="number" width="22" precision="2"/>
+          <dataItemPrivate adtName="" schemaName=""/>
+        </dataItem>
+        <dataItem name="MCF_CFO_FON_CODIGO" datatype="vchar2" columnOrder="55"
+         width="15" defaultWidth="100000" defaultHeight="10000"
+         columnFlags="1" defaultLabel="Mcf Cfo Fon Codigo">
+          <dataDescriptor expression="MCF3.MCF_CFO_FON_CODIGO"
+           descriptiveExpression="MCF_CFO_FON_CODIGO" order="12" width="15"/>
+          <dataItemPrivate adtName="" schemaName=""/>
+        </dataItem>
+        <dataItem name="MCF_CFO_CODIGO" oracleDatatype="number"
+         columnOrder="56" width="22" defaultWidth="50000"
+         defaultHeight="10000" columnFlags="1" defaultLabel="Mcf Cfo Codigo">
+          <dataDescriptor expression="MCF3.MCF_CFO_CODIGO"
+           descriptiveExpression="MCF_CFO_CODIGO" order="13"
+           oracleDatatype="number" width="22" precision="3"/>
+          <dataItemPrivate adtName="" schemaName=""/>
+        </dataItem>
+        <dataItem name="PER_DIGITO_CONTROL" oracleDatatype="number"
+         columnOrder="57" width="22" defaultWidth="30000"
+         defaultHeight="10000" columnFlags="0"
+         defaultLabel="Per Digito Control" breakOrder="none">
+          <dataDescriptor expression="PER5.PER_DIGITO_CONTROL"
+           descriptiveExpression="PER_DIGITO_CONTROL" order="15"
+           oracleDatatype="number" width="22" precision="1"/>
+          <dataItemPrivate adtName="" schemaName=""/>
+        </dataItem>
+        <formula name="CF_RETENCION" source="cf_retencionformula"
+         datatype="number" width="22" precision="20" defaultWidth="0"
+         defaultHeight="0" columnFlags="16" breakOrder="none">
+          <displayInfo x="0.00000" y="0.00000" width="0.00000"
+           height="0.00000"/>
+        </formula>
+        <placeholder name="CP_RENDIMIENTOS" datatype="number" width="24"
+         precision="22" defaultWidth="0" defaultHeight="0" columnFlags="16">
+          <displayInfo x="0.00000" y="0.00000" width="0.00000"
+           height="0.00000"/>
+        </placeholder>
+        <formula name="CF_SEGMENTO" source="cf_segmentoformula"
+         datatype="character" width="30" precision="30" defaultWidth="0"
+         defaultHeight="0" columnFlags="16" breakOrder="none">
+          <displayInfo x="0.00000" y="0.00000" width="0.00000"
+           height="0.00000"/>
+        </formula>
+        <formula name="CF_CATEGORIZACION" source="cf_categorizacionformula"
+         datatype="character" width="30" precision="10" defaultWidth="0"
+         defaultHeight="0" columnFlags="16" breakOrder="none">
+          <displayInfo x="0.00000" y="0.00000" width="0.00000"
+           height="0.00000"/>
+        </formula>
+      </group>
+    </dataSource>
+    <dataSource name="Q_FONDOS">
+      <select>
+      <![CDATA[SELECT FON_CODIGO
+             ,FON_RAZON_SOCIAL FON_RAZON_SOCIAL
+             ,FON_MNEMONICO
+             ,FON_TIPO
+             ,FON_BMO_MNEMONICO
+FROM   FONDOS
+WHERE FON_CODIGO LIKE :QUE_FONDO
+AND    (FON_TIPO = 'A' OR
+              (FON_TIPO IN ('C','E') AND
+               TRUNC(FON_FECHA_FINALIZACION) >= TRUNC(SYSDATE)))]]>
+      </select>
+      <displayInfo x="0.77930" y="0.27087" width="0.96875" height="0.28125"/>
+      <group name="G_FONDOS">
+        <displayInfo x="0.22913" y="0.86560" width="2.08398" height="2.48145"
+        />
+        <dataItem name="FON_TIPO" datatype="vchar2" columnOrder="60" width="1"
+         defaultWidth="10000" defaultHeight="10000" columnFlags="1"
+         defaultLabel="Fon Tipo">
+          <dataDescriptor expression="FON_TIPO"
+           descriptiveExpression="FON_TIPO" order="4" width="1"/>
+          <dataItemPrivate adtName="" schemaName=""/>
+        </dataItem>
+        <dataItem name="FON_BMO_MNEMONICO" datatype="vchar2" columnOrder="61"
+         width="5" defaultWidth="50000" defaultHeight="10000" columnFlags="1"
+         defaultLabel="Fon Bmo Mnemonico">
+          <dataDescriptor expression="FON_BMO_MNEMONICO"
+           descriptiveExpression="FON_BMO_MNEMONICO" order="5" width="5"/>
+          <dataItemPrivate adtName="" schemaName=""/>
+        </dataItem>
+        <dataItem name="FON_RAZON_SOCIAL" datatype="vchar2" columnOrder="29"
+         width="150" defaultWidth="400000" defaultHeight="10000"
+         columnFlags="1" defaultLabel="Fon Razon Social1">
+          <dataDescriptor expression="FON_RAZON_SOCIAL"
+           descriptiveExpression="FON_RAZON_SOCIAL" order="2" width="150"/>
+          <dataItemPrivate adtName="" schemaName=""/>
+        </dataItem>
+        <dataItem name="FON_CODIGO" datatype="vchar2" columnOrder="28"
+         width="15" defaultWidth="150000" defaultHeight="10000"
+         columnFlags="0" defaultLabel="Fondo" breakOrder="none">
+          <dataDescriptor expression="FON_CODIGO"
+           descriptiveExpression="FON_CODIGO" order="1" width="15"/>
+          <dataItemPrivate adtName="" schemaName=""/>
+        </dataItem>
+        <dataItem name="FON_MNEMONICO" datatype="vchar2" columnOrder="30"
+         width="5" defaultWidth="10000" defaultHeight="10000" columnFlags="0"
+         defaultLabel="Fon Mnemonico" breakOrder="none">
+          <dataDescriptor expression="FON_MNEMONICO"
+           descriptiveExpression="FON_MNEMONICO" order="3" width="5"/>
+          <dataItemPrivate adtName="" schemaName=""/>
+        </dataItem>
+        <summary name="CS_CAPITAL" source="CS_SUC_CAPITAL" function="sum"
+         width="24" precision="22" scale="2" reset="G_FONDOS"
+         compute="G_FONDOS" defaultWidth="240000" defaultHeight="10000"
+         columnFlags="8" defaultLabel="Cs Capital">
+          <displayInfo x="0.00000" y="0.00000" width="0.00000"
+           height="0.00000"/>
+        </summary>
+        <summary name="CS_INV" source="CS_SUC_INV" function="sum" width="24"
+         precision="22" scale="2" reset="G_FONDOS" compute="G_FONDOS"
+         defaultWidth="240000" defaultHeight="10000" columnFlags="8"
+         defaultLabel="Cs Inv">
+          <displayInfo x="0.00000" y="0.00000" width="0.00000"
+           height="0.00000"/>
+        </summary>
+        <summary name="CS_RENDRF" source="CS_SUC_RENRF" function="sum"
+         width="24" precision="22" scale="2" reset="G_FONDOS"
+         compute="G_FONDOS" defaultWidth="240000" defaultHeight="10000"
+         columnFlags="8" defaultLabel="Cs Rendrf">
+          <displayInfo x="0.00000" y="0.00000" width="0.00000"
+           height="0.00000"/>
+        </summary>
+        <summary name="CS_RENDRV" source="MCF_SALDO_RENDIMIENTOS_RV4"
+         function="sum" width="24" precision="22" scale="2" reset="G_FONDOS"
+         compute="G_FONDOS" defaultWidth="240000" defaultHeight="10000"
+         columnFlags="8" defaultLabel="Cs Rendrv">
+          <displayInfo x="0.00000" y="0.00000" width="0.00000"
+           height="0.00000"/>
+        </summary>
+        <summary name="CS_RTEFTE" source="CF_RETENCION" function="sum"
+         width="24" precision="22" scale="2" reset="G_FONDOS"
+         compute="G_FONDOS" defaultWidth="240000" defaultHeight="10000"
+         columnFlags="8" defaultLabel="Cs Rtefte">
+          <displayInfo x="0.00000" y="0.00000" width="0.00000"
+           height="0.00000"/>
+        </summary>
+        <summary name="CS_RENDIMIENTOS_FON" source="CP_RENDIMIENTOS"
+         function="sum" width="24" precision="22" reset="G_FONDOS"
+         compute="report" defaultWidth="90000" defaultHeight="10000"
+         columnFlags="8" defaultLabel="Cs Rendimientos Fon">
+          <displayInfo x="0.00000" y="0.00000" width="0.00000"
+           height="0.00000"/>
+        </summary>
+        <summary name="CS_UDS" source="MCF_SALDO_UNIDADES2" function="sum"
+         width="20" precision="18" scale="8" reset="G_FONDOS" compute="report"
+         defaultWidth="200000" defaultHeight="10000" columnFlags="8"
+         defaultLabel="Cs Uds">
+          <displayInfo x="0.00000" y="0.00000" width="0.00000"
+           height="0.00000"/>
+        </summary>
+      </group>
+    </dataSource>
+    <formula name="CG$C_USER" source="cg$c_user_fmla" datatype="character"
+     width="240" defaultWidth="400000" defaultHeight="10000" columnFlags="16"
+     defaultLabel="Cg C User" breakOrder="none">
+      <displayInfo x="0.00000" y="0.00000" width="0.79993" height="0.19995"/>
+    </formula>
+    <summary name="CAPITAL REPORTE" source="CS_CAPITAL" function="sum"
+     width="24" precision="22" scale="2" reset="report" compute="report"
+     defaultWidth="0" defaultHeight="0" columnFlags="40">
+      <displayInfo x="0.82288" y="4.43750" width="0.79993" height="0.19995"/>
+    </summary>
+    <summary name="INVERSION REPORTE" source="CS_INV" function="sum"
+     width="24" precision="22" scale="2" reset="report" compute="report"
+     defaultWidth="0" defaultHeight="0" columnFlags="40">
+      <displayInfo x="0.88538" y="4.69788" width="0.79993" height="0.19995"/>
+    </summary>
+    <summary name="UNIDADES REPORTE" source="CS_UDS" function="sum" width="20"
+     precision="18" scale="8" reset="report" compute="report" defaultWidth="0"
+     defaultHeight="0" columnFlags="40">
+      <displayInfo x="1.08325" y="5.65625" width="0.79993" height="0.19995"/>
+    </summary>
+    <summary name="REND RF REPORTE" source="CS_RENDRF" function="sum"
+     width="24" precision="22" scale="2" reset="report" compute="report"
+     defaultWidth="0" defaultHeight="0" columnFlags="40">
+      <displayInfo x="0.92700" y="4.93750" width="0.79993" height="0.19995"/>
+    </summary>
+    <summary name="REND RV REPORTE" source="CS_RENDRV" function="sum"
+     width="24" precision="22" scale="2" reset="report" compute="report"
+     defaultWidth="0" defaultHeight="0" columnFlags="40">
+      <displayInfo x="0.96875" y="5.18750" width="0.79993" height="0.19995"/>
+    </summary>
+    <summary name="RTE FTE REPORTE" source="CS_RTEFTE" function="sum"
+     width="24" precision="22" scale="2" reset="report" compute="report"
+     defaultWidth="0" defaultHeight="0" columnFlags="40">
+      <displayInfo x="1.01038" y="5.42700" width="0.79993" height="0.19995"/>
+    </summary>
+    <summary name="CS_RENDIMIENTOS_REP" source="CP_RENDIMIENTOS"
+     function="sum" width="20" precision="10" reset="report" compute="report"
+     defaultWidth="0" defaultHeight="0" columnFlags="8">
+      <displayInfo x="0.74988" y="4.19788" width="0.79993" height="0.19995"/>
+    </summary>
+    <link parentGroup="G_FONDOS" parentColumn="FON_CODIGO"
+     childQuery="CG$Q_MCF3" childColumn="MCF_CFO_FON_CODIGO" condition="eq"
+     sqlClause="where"/>
+  </data>
+  <layout>
+    <rulers numberOfSnapPoints="4"/>
+  <section name="header" width="23.50000" widthInChar="285">
+    <body width="23.50000" height="11.00000">
+      <location x="0.00000" y="0.00000"/>
+    </body>
+  </section>
+  <section name="trailer" width="13.50000" widthInChar="255">
+    <body width="13.50000" height="11.00000">
+      <location x="0.00000" y="0.00000"/>
+    </body>
+  </section>
+  <section name="main" width="25.50000" widthInChar="305">
+    <body width="25.50000" height="9.84583">
+      <location x="0.00000" y="0.83337"/>
+      <frame name="M_FONDOS_GRPFR1">
+        <geometryInfo x="0.00000" y="0.00000" width="25.38013"
+         height="1.54688"/>
+        <generalLayout verticalElasticity="variable"
+         horizontalElasticity="expand"/>
+        <repeatingFrame name="R_FONDOS1" source="G_FONDOS"
+         printDirection="down" minWidowRecords="1" columnMode="no">
+          <geometryInfo x="0.00000" y="0.00000" width="25.32288"
+           height="1.33325"/>
+          <generalLayout verticalElasticity="variable"/>
+          <frame name="M_SUCURSAL_GRPFR1">
+            <geometryInfo x="0.02332" y="0.16638" width="25.25842"
+             height="1.16504"/>
+            <generalLayout verticalElasticity="variable"/>
+            <repeatingFrame name="R_SUCURSAL1" source="G_SUC"
+             printDirection="down" minWidowRecords="1" columnMode="no">
+              <geometryInfo x="0.02332" y="0.16638" width="25.25317"
+               height="0.99866"/>
+              <generalLayout verticalElasticity="variable"/>
+              <frame name="M_CUENTA_FONDO_GRPFR1">
+                <geometryInfo x="0.02332" y="0.33289" width="25.25317"
+                 height="0.83215"/>
+                <generalLayout verticalElasticity="variable"/>
+                <frame name="M_CUENTA_FONDO_HDR1">
+                  <geometryInfo x="0.02332" y="0.33289" width="23.34167"
+                   height="0.33276"/>
+                  <advancedLayout printObjectOnPage="allPage"
+                   basePrintingOn="enclosingObject"/>
+                  <text name="B_TITULAR1" minWidowLines="1">
+                    <textSettings spacing="0"/>
+                    <geometryInfo x="0.07739" y="0.33289" width="3.02722"
+                     height="0.33276"/>
+                    <textSegment>
+                      <font face="Times New Roman" size="10" bold="yes"/>
+                      <string>
+                      <![CDATA[Nombre Cuenta
+]]>
+                      </string>
+                    </textSegment>
+                    <textSegment>
+                      <font face="Times New Roman" size="10" bold="yes"/>
+                      <string>
+                      <![CDATA[---------------------------------------------------------------]]>
+                      </string>
+                    </textSegment>
+                  </text>
+                  <text name="B_CUENTA1" minWidowLines="1">
+                    <textSettings spacing="0"/>
+                    <geometryInfo x="3.94495" y="0.33289" width="2.07800"
+                     height="0.33276"/>
+                    <textSegment>
+                      <font face="Times New Roman" size="10" bold="yes"/>
+                      <string>
+                      <![CDATA[Cuenta
+]]>
+                      </string>
+                    </textSegment>
+                    <textSegment>
+                      <font face="Times New Roman" size="10" bold="yes"/>
+                      <string>
+                      <![CDATA[-----------------------------]]>
+                      </string>
+                    </textSegment>
+                  </text>
+                  <text name="B_CAPITAL1" minWidowLines="1">
+                    <textSettings justify="right" spacing="0"/>
+                    <geometryInfo x="6.24890" y="0.33289" width="1.43457"
+                     height="0.33276"/>
+                    <textSegment>
+                      <font face="Times New Roman" size="10" bold="yes"/>
+                      <string>
+                      <![CDATA[Saldo Capital
+]]>
+                      </string>
+                    </textSegment>
+                    <textSegment>
+                      <font face="Times New Roman" size="10" bold="yes"/>
+                      <string>
+                      <![CDATA[-----------------------------]]>
+                      </string>
+                    </textSegment>
+                  </text>
+                  <text name="B_INVERSION1" minWidowLines="1">
+                    <textSettings justify="right" spacing="0"/>
+                    <geometryInfo x="7.93835" y="0.33289" width="1.49609"
+                     height="0.33276"/>
+                    <textSegment>
+                      <font face="Times New Roman" size="10" bold="yes"/>
+                      <string>
+                      <![CDATA[Saldo Inversion
+]]>
+                      </string>
+                    </textSegment>
+                    <textSegment>
+                      <font face="Times New Roman" size="10" bold="yes"/>
+                      <string>
+                      <![CDATA[----------------------------]]>
+                      </string>
+                    </textSegment>
+                  </text>
+                  <text name="B_REND_RF1" minWidowLines="1">
+                    <textSettings justify="right" spacing="0"/>
+                    <geometryInfo x="9.53162" y="0.33289" width="1.43237"
+                     height="0.33276"/>
+                    <textSegment>
+                      <font face="Times New Roman" size="10" bold="yes"/>
+                      <string>
+                      <![CDATA[Rendimientos Rf
+]]>
+                      </string>
+                    </textSegment>
+                    <textSegment>
+                      <font face="Times New Roman" size="10" bold="yes"/>
+                      <string>
+                      <![CDATA[---------------------------]]>
+                      </string>
+                    </textSegment>
+                  </text>
+                  <text name="B_REND_RV1" minWidowLines="1">
+                    <textSettings justify="right" spacing="0"/>
+                    <geometryInfo x="11.02063" y="0.33289" width="1.35486"
+                     height="0.33276"/>
+                    <textSegment>
+                      <font face="Times New Roman" size="10" bold="yes"/>
+                      <string>
+                      <![CDATA[Rendimientos Rv
+]]>
+                      </string>
+                    </textSegment>
+                    <textSegment>
+                      <font face="Times New Roman" size="10" bold="yes"/>
+                      <string>
+                      <![CDATA[-------------------------]]>
+                      </string>
+                    </textSegment>
+                  </text>
+                  <text name="B_COM1" minWidowLines="1">
+                    <textSettings justify="center" spacing="0"/>
+                    <geometryInfo x="14.92358" y="0.33289" width="0.41052"
+                     height="0.33276"/>
+                    <textSegment>
+                      <font face="Times New Roman" size="10" bold="yes"/>
+                      <string>
+                      <![CDATA[Corr
+]]>
+                      </string>
+                    </textSegment>
+                    <textSegment>
+                      <font face="Times New Roman" size="10" bold="yes"/>
+                      <string>
+                      <![CDATA[-------]]>
+                      </string>
+                    </textSegment>
+                  </text>
+                  <text name="B_UNIDADES1" minWidowLines="1">
+                    <textSettings justify="end" spacing="0"/>
+                    <geometryInfo x="13.24939" y="0.33289" width="1.58337"
+                     height="0.33276"/>
+                    <textSegment>
+                      <font face="Times New Roman" size="10" bold="yes"/>
+                      <string>
+                      <![CDATA[Saldo Unidades
+]]>
+                      </string>
+                    </textSegment>
+                    <textSegment>
+                      <font face="Times New Roman" size="10" bold="yes"/>
+                      <string>
+                      <![CDATA[---------------------------]]>
+                      </string>
+                    </textSegment>
+                  </text>
+                  <text name="B_RTE_FTE2" minWidowLines="1">
+                    <textSettings justify="right" spacing="0"/>
+                    <geometryInfo x="12.44775" y="0.33289" width="0.31238"
+                     height="0.33276"/>
+                    <advancedLayout formatTrigger="b_rte_fte2formattrigger"/>
+                    <textSegment>
+                      <font face="Times New Roman" size="9" bold="yes"/>
+                      <string>
+                      <![CDATA[Retefuente($)
+]]>
+                      </string>
+                    </textSegment>
+                    <textSegment>
+                      <font face="Times New Roman" size="9" bold="yes"/>
+                      <string>
+                      <![CDATA[----------------------]]>
+                      </string>
+                    </textSegment>
+                  </text>
+                  <text name="B_RTE_FTE3" minWidowLines="1">
+                    <textSettings justify="right" spacing="0"/>
+                    <geometryInfo x="12.80249" y="0.33289" width="0.34900"
+                     height="0.33276"/>
+                    <advancedLayout formatTrigger="b_rte_fte3formattrigger"/>
+                    <textSegment>
+                      <font face="Times New Roman" size="9" bold="yes"/>
+                      <string>
+                      <![CDATA[Rendimientos($)
+]]>
+                      </string>
+                    </textSegment>
+                    <textSegment>
+                      <font face="Times New Roman" size="9" bold="yes"/>
+                      <string>
+                      <![CDATA[------------------------]]>
+                      </string>
+                    </textSegment>
+                  </text>
+                  <text name="B_NOMBRE_COM" minWidowLines="1">
+                    <textSettings justify="center" spacing="0"/>
+                    <geometryInfo x="15.41956" y="0.33289" width="2.76538"
+                     height="0.33276"/>
+                    <textSegment>
+                      <font face="Times New Roman" size="10" bold="yes"/>
+                      <string>
+                      <![CDATA[Nombre Comercial
+]]>
+                      </string>
+                    </textSegment>
+                    <textSegment>
+                      <font face="Times New Roman" size="10" bold="yes"/>
+                      <string>
+                      <![CDATA[---------------------------------------------------------]]>
+                      </string>
+                    </textSegment>
+                  </text>
+                  <text name="B_CENTRO_PROD" minWidowLines="1">
+                    <textSettings justify="center" spacing="0"/>
+                    <geometryInfo x="18.24866" y="0.33289" width="2.44727"
+                     height="0.33276"/>
+                    <textSegment>
+                      <font face="Times New Roman" size="10" bold="yes"/>
+                      <string>
+                      <![CDATA[Centro Produccion
+]]>
+                      </string>
+                    </textSegment>
+                    <textSegment>
+                      <font face="Times New Roman" size="10" bold="yes"/>
+                      <string>
+                      <![CDATA[------------------------------------------------]]>
+                      </string>
+                    </textSegment>
+                  </text>
+                  <text name="B_3" minWidowLines="1">
+                    <textSettings justify="center" spacing="0"/>
+                    <geometryInfo x="20.82861" y="0.33325" width="2.53638"
+                     height="0.33240"/>
+                    <textSegment>
+                      <font face="Times New Roman" size="10" bold="yes"/>
+                      <string>
+                      <![CDATA[Segmento Cliente
+]]>
+                      </string>
+                    </textSegment>
+                    <textSegment>
+                      <font face="Times New Roman" size="10" bold="yes"/>
+                      <string>
+                      <![CDATA[--------------------------------------------------]]>
+                      </string>
+                    </textSegment>
+                  </text>
+                </frame>
+                <repeatingFrame name="R_CUENTA_FONDO1" source="APORTES"
+                 printDirection="down" minWidowRecords="1" columnMode="no">
+                  <geometryInfo x="0.02332" y="0.66565" width="25.24792"
+                   height="0.16650"/>
+                  <generalLayout verticalElasticity="expand"/>
+                  <field name="F_TITULAR1" source="CCC_TITULAR_CUENTA"
+                   minWidowLines="1" spacing="0" alignment="start">
+                    <font face="Times New Roman" size="10"/>
+                    <geometryInfo x="0.06714" y="0.66565" width="3.78748"
+                     height="0.16248"/>
+                  </field>
+                  <field name="F_CUENTA1" source="CUENTA" minWidowLines="1"
+                   spacing="0" alignment="start">
+                    <font face="Times New Roman" size="9"/>
+                    <geometryInfo x="3.90576" y="0.66565" width="2.07349"
+                     height="0.16248"/>
+                    <generalLayout verticalElasticity="expand"/>
+                  </field>
+                  <field name="F_CAPITAL1" source="MCF_SALDO_CAPITAL"
+                   minWidowLines="1" formatMask="-NNN,NNN,NNN,NNN,NN0.00"
+                   spacing="0" alignment="right">
+                    <font face="Times New Roman" size="9"/>
+                    <geometryInfo x="6.05554" y="0.66565" width="1.61877"
+                     height="0.16650"/>
+                  </field>
+                  <field name="F_INVERSION1" source="MCF_SALDO_INVER1"
+                   minWidowLines="1" formatMask="-NNN,NNN,NNN,NNN,NN0.00"
+                   spacing="0" alignment="right">
+                    <font face="Times New Roman" size="9"/>
+                    <geometryInfo x="7.78333" y="0.66565" width="1.60876"
+                     height="0.16650"/>
+                  </field>
+                  <field name="F_REND_RF1" source="MCF_SALDO_RENDIMIENTOS_RF3"
+                   minWidowLines="1" formatMask="-NNN,NNN,NNN,NNN,NN0.00"
+                   spacing="0" alignment="right">
+                    <font face="Times New Roman" size="9"/>
+                    <geometryInfo x="9.46045" y="0.66565" width="1.48792"
+                     height="0.16650"/>
+                  </field>
+                  <field name="F_REND_RV1" source="MCF_SALDO_RENDIMIENTOS_RV4"
+                   minWidowLines="1" formatMask="-NNN,NNN,NNN,NNN,NN0.00"
+                   spacing="0" alignment="right">
+                    <font face="Times New Roman" size="9"/>
+                    <geometryInfo x="11.02649" y="0.66565" width="1.34375"
+                     height="0.16650"/>
+                  </field>
+                  <field name="F_RTE_FTE1" source="CF_RETENCION" visible="no"
+                   minWidowLines="1" formatMask="-NNN,NNN,NNN,NNN,NN0"
+                   spacing="0" alignment="right">
+                    <font face="Times New Roman" size="9"/>
+                    <geometryInfo x="12.43274" y="0.66565" width="0.23193"
+                     height="0.16248"/>
+                  </field>
+                  <field name="F_COM1" source="PER_INICIALES_USUARIO"
+                   minWidowLines="1" spacing="0" alignment="center">
+                    <font face="Times New Roman" size="10"/>
+                    <geometryInfo x="14.90784" y="0.66565" width="0.40369"
+                     height="0.16650"/>
+                  </field>
+                  <field name="F_UNIDADES1" source="MCF_SALDO_UNIDADES2"
+                   minWidowLines="1"
+                   formatMask="-NNN,NNN,NNN,NNN,NN0.00000000" spacing="0"
+                   alignment="right">
+                    <font face="Times New Roman" size="9"/>
+                    <geometryInfo x="13.18652" y="0.66565" width="1.63794"
+                     height="0.16650"/>
+                  </field>
+                  <field name="F_RENDIMIENTOS_FTE2" source="CP_RENDIMIENTOS"
+                   minWidowLines="1" formatMask="-NNN,NNN,NNN,NNN,NN0"
+                   spacing="0" alignment="right">
+                    <font face="Times New Roman" size="9"/>
+                    <geometryInfo x="12.69849" y="0.66565" width="0.34277"
+                     height="0.16650"/>
+                    <advancedLayout
+                     formatTrigger="f_rendimientos_fte2formattrigg"/>
+                  </field>
+                  <field name="F_NOM_COM" source="COMERCIAL" minWidowLines="1"
+                   spacing="0" alignment="start">
+                    <font face="Times New Roman" size="8"/>
+                    <geometryInfo x="15.41675" y="0.66663" width="2.77783"
+                     height="0.16150"/>
+                  </field>
+                  <field name="F_CENTRO_PROD" source="MESA" minWidowLines="1"
+                   spacing="0" alignment="start">
+                    <font face="Times New Roman" size="8"/>
+                    <geometryInfo x="18.26184" y="0.66565" width="2.48340"
+                     height="0.16650"/>
+                  </field>
+                  <field name="F_SEGMENTO" source="CF_SEGMENTO"
+                   minWidowLines="1" spacing="0" alignment="start">
+                    <font face="Times New Roman" size="8"/>
+                    <geometryInfo x="20.83899" y="0.66663" width="2.52551"
+                     height="0.16553"/>
+                  </field>
+                  <field name="F_CATEGORIZACION" source="CF_CATEGORIZACION"
+                   minWidowLines="1" spacing="0" alignment="start">
+                    <font face="Times New Roman" size="8"/>
+                    <geometryInfo x="23.36365" y="0.66565" width="1.90198"
+                     height="0.16650"/>
+                  </field>
+                </repeatingFrame>
+                <frame name="M_CUENTA_FONDO_FTR1">
+                  <geometryInfo x="0.02332" y="0.83215" width="25.24792"
+                   height="0.33289"/>
+                  <advancedLayout printObjectOnPage="lastPage"
+                   basePrintingOn="anchoringObject"/>
+                  <field name="F_CAPITAL_SUCURSAL1" source="CS_SUC_CAPITAL"
+                   minWidowLines="1" formatMask="-NNN,NNN,NNN,NNN,NN0.00"
+                   spacing="0" alignment="end">
+                    <font face="Times New Roman" size="10" bold="yes"/>
+                    <geometryInfo x="5.99487" y="0.99475" width="1.66443"
+                     height="0.17029"/>
+                  </field>
+                  <field name="F_INVERSION_SUCURSAL1" source="CS_SUC_INV"
+                   minWidowLines="1" formatMask="-NNN,NNN,NNN,NNN,NN0.00"
+                   spacing="0" alignment="end">
+                    <font face="Times New Roman" size="10" bold="yes"/>
+                    <geometryInfo x="7.72913" y="0.99475" width="1.71875"
+                     height="0.17029"/>
+                  </field>
+                  <field name="F_REND_RF_SUCURSAL1" source="CS_SUC_RENRF"
+                   minWidowLines="1" formatMask="-NNN,NNN,NNN,NNN,NN0.00"
+                   spacing="0" alignment="end">
+                    <font face="Times New Roman" size="10" bold="yes"/>
+                    <geometryInfo x="9.49902" y="1.00000" width="1.47009"
+                     height="0.16504"/>
+                  </field>
+                  <field name="F_REND_RV_SUCURSAL1" source="CS_SUC_RENRV"
+                   minWidowLines="1" formatMask="-NNN,NNN,NNN,NNN,NN0.00"
+                   spacing="0" alignment="end">
+                    <font face="Times New Roman" size="10" bold="yes"/>
+                    <geometryInfo x="11.04199" y="1.00000" width="1.34900"
+                     height="0.16504"/>
+                  </field>
+                  <field name="F_RTE_FTE_SUCURSAL1" source="CS_SUC_RTEFTE"
+                   visible="no" minWidowLines="1"
+                   formatMask="-NNN,NNN,NNN,NNN,NN0" spacing="0"
+                   alignment="end">
+                    <font face="Times New Roman" size="10" bold="yes"/>
+                    <geometryInfo x="12.45251" y="1.00000" width="0.26123"
+                     height="0.16504"/>
+                  </field>
+                  <text name="B_CAPITAL_SUCURSAL1" minWidowLines="1">
+                    <textSettings justify="right" spacing="0"/>
+                    <geometryInfo x="6.36145" y="0.83215" width="1.32068"
+                     height="0.16785"/>
+                    <textSegment>
+                      <font face="Times New Roman" size="10" bold="yes"/>
+                      <string>
+                      <![CDATA[---------------------------]]>
+                      </string>
+                    </textSegment>
+                  </text>
+                  <text name="B_INVERSION_SUCURSAL1" minWidowLines="1">
+                    <textSettings justify="right" spacing="0"/>
+                    <geometryInfo x="7.92566" y="0.83215" width="1.49878"
+                     height="0.16785"/>
+                    <textSegment>
+                      <font face="Times New Roman" size="10" bold="yes"/>
+                      <string>
+                      <![CDATA[----------------------------]]>
+                      </string>
+                    </textSegment>
+                  </text>
+                  <field name="F_UNIDADES_SUCURSAL1" source="CS_SUC_UDS"
+                   minWidowLines="1"
+                   formatMask="-NNN,NNN,NNN,NNN,NN0.00000000" spacing="0"
+                   alignment="end">
+                    <font face="Times New Roman" size="10" bold="yes"/>
+                    <geometryInfo x="13.21838" y="0.99854" width="1.67749"
+                     height="0.16650"/>
+                  </field>
+                  <text name="B_UNIDADES_SUCURSAL1" minWidowLines="1">
+                    <textSettings justify="right" spacing="0"/>
+                    <geometryInfo x="13.20801" y="0.83215" width="1.61670"
+                     height="0.16785"/>
+                    <textSegment>
+                      <font face="Times New Roman" size="10" bold="yes"/>
+                      <string>
+                      <![CDATA[---------------------------]]>
+                      </string>
+                    </textSegment>
+                  </text>
+                  <text name="B_REND_RF_SUCURSAL1" minWidowLines="1">
+                    <textSettings justify="right" spacing="0"/>
+                    <geometryInfo x="9.60474" y="0.83215" width="1.34888"
+                     height="0.16785"/>
+                    <textSegment>
+                      <font face="Times New Roman" size="10" bold="yes"/>
+                      <string>
+                      <![CDATA[--------------------------]]>
+                      </string>
+                    </textSegment>
+                  </text>
+                  <text name="B_REND_RV_SUCURSAL1" minWidowLines="1">
+                    <textSettings justify="right" spacing="0"/>
+                    <geometryInfo x="11.11450" y="0.83215" width="1.25574"
+                     height="0.16785"/>
+                    <textSegment>
+                      <font face="Times New Roman" size="10" bold="yes"/>
+                      <string>
+                      <![CDATA[---------------------------]]>
+                      </string>
+                    </textSegment>
+                  </text>
+                  <text name="B_RTE_FTE_SUCURSAL1" minWidowLines="1">
+                    <textSettings justify="right" spacing="0"/>
+                    <geometryInfo x="12.70776" y="0.83215" width="0.47705"
+                     height="0.16638"/>
+                    <textSegment>
+                      <font face="Times New Roman" size="10" bold="yes"/>
+                      <string>
+                      <![CDATA[--------]]>
+                      </string>
+                    </textSegment>
+                  </text>
+                  <text name="B_Sum1" minWidowLines="1">
+                    <textSettings spacing="0"/>
+                    <geometryInfo x="0.07739" y="0.99854" width="1.35352"
+                     height="0.16650"/>
+                    <textSegment>
+                      <font face="Times New Roman" size="10" bold="yes"/>
+                      <string>
+                      <![CDATA[Totales Sucursal]]>
+                      </string>
+                    </textSegment>
+                  </text>
+                  <field name="F_RENDIMIENTOS_SUCURSAL2"
+                   source="CS_RENDIMIENTOS_SUC" minWidowLines="1"
+                   formatMask="-NNN,NNN,NNN,NNN,NN0" spacing="0"
+                   alignment="end">
+                    <font face="Times New Roman" size="10" bold="yes"/>
+                    <geometryInfo x="12.82813" y="0.99475" width="0.34180"
+                     height="0.17029"/>
+                    <advancedLayout
+                     formatTrigger="f_rendimientos_sucursal2format"/>
+                  </field>
+                  <text name="B_RTE_FTE_SUCURSAL2" minWidowLines="1">
+                    <textSettings justify="right" spacing="0"/>
+                    <geometryInfo x="12.38989" y="0.83215" width="0.31323"
+                     height="0.16785"/>
+                    <textSegment>
+                      <font face="Times New Roman" size="10" bold="yes"/>
+                      <string>
+                      <![CDATA[------]]>
+                      </string>
+                    </textSegment>
+                  </text>
+                </frame>
+                <text name="B_4" minWidowLines="1">
+                  <textSettings spacing="0"/>
+                  <geometryInfo x="23.45837" y="0.34998" width="1.71350"
+                   height="0.29065"/>
+                  <advancedLayout printObjectOnPage="allPage"
+                   basePrintingOn="enclosingObject"/>
+                  <textSegment>
+                    <font face="Times New Roman" size="10" bold="yes"/>
+                    <string>
+                    <![CDATA[Categorizacion del Cliente
+]]>
+                    </string>
+                  </textSegment>
+                  <textSegment>
+                    <font face="Times New Roman" size="10" bold="yes"/>
+                    <string>
+                    <![CDATA[------------------------------------]]>
+                    </string>
+                  </textSegment>
+                </text>
+              </frame>
+              <field name="F_Sucursal1" source="SUC_NOMBRE1" minWidowLines="1"
+               spacing="0" alignment="start">
+                <font face="Times New Roman" size="10" bold="yes"/>
+                <geometryInfo x="0.89685" y="0.16638" width="2.16150"
+                 height="0.16650"/>
+                <advancedLayout printObjectOnPage="allPage"
+                 basePrintingOn="enclosingObject"/>
+              </field>
+              <text name="B_Sucursal1" minWidowLines="1">
+                <textSettings spacing="0"/>
+                <geometryInfo x="0.07727" y="0.16638" width="0.70447"
+                 height="0.16650"/>
+                <advancedLayout printObjectOnPage="allPage"
+                 basePrintingOn="enclosingObject"/>
+                <textSegment>
+                  <font face="Times New Roman" size="10" bold="yes"/>
+                  <string>
+                  <![CDATA[Sucursal]]>
+                  </string>
+                </textSegment>
+              </text>
+            </repeatingFrame>
+            <frame name="M_SUCURSAL_FTR1">
+              <geometryInfo x="0.02332" y="1.16504" width="25.14905"
+               height="0.16638"/>
+              <advancedLayout printObjectOnPage="lastPage"
+               basePrintingOn="anchoringObject"/>
+              <field name="F_CAPITAL_FONDO1" source="CS_CAPITAL"
+               minWidowLines="1" formatMask="-NNN,NNN,NNN,NNN,NN0.00"
+               spacing="0" alignment="end">
+                <font face="Times New Roman" size="10" bold="yes"/>
+                <geometryInfo x="5.99487" y="1.16504" width="1.66199"
+                 height="0.16638"/>
+              </field>
+              <text name="B_CAPITAL_FONDO1" minWidowLines="1">
+                <textSettings spacing="0"/>
+                <geometryInfo x="0.06653" y="1.16504" width="1.63062"
+                 height="0.16638"/>
+                <textSegment>
+                  <font face="Times New Roman" size="10" bold="yes"/>
+                  <string>
+                  <![CDATA[Totales Fondo]]>
+                  </string>
+                </textSegment>
+              </text>
+              <field name="F_INVERSION_FONDO1" source="CS_INV"
+               minWidowLines="1" formatMask="-NNN,NNN,NNN,NNN,NN0.00"
+               spacing="0" alignment="end">
+                <font face="Times New Roman" size="10" bold="yes"/>
+                <geometryInfo x="7.72913" y="1.16504" width="1.71875"
+                 height="0.16638"/>
+              </field>
+              <field name="F_REND_RF_FONDO1" source="CS_RENDRF"
+               minWidowLines="1" formatMask="-NNN,NNN,NNN,NNN,NN0.00"
+               spacing="0" alignment="end">
+                <font face="Times New Roman" size="10" bold="yes"/>
+                <geometryInfo x="9.50171" y="1.16504" width="1.46741"
+                 height="0.16638"/>
+              </field>
+              <field name="F_REND_RV_FONDO1" source="CS_RENDRV"
+               minWidowLines="1" formatMask="-NNN,NNN,NNN,NNN,NN0.00"
+               spacing="0" alignment="end">
+                <font face="Times New Roman" size="10" bold="yes"/>
+                <geometryInfo x="11.04199" y="1.16504" width="1.34900"
+                 height="0.16638"/>
+              </field>
+              <field name="F_RTE_FTE_FONDO1" source="CS_RTEFTE" visible="no"
+               minWidowLines="1" formatMask="-NNN,NNN,NNN,NNN,NN0" spacing="0"
+               alignment="end">
+                <font face="Times New Roman" size="10" bold="yes"/>
+                <geometryInfo x="12.45508" y="1.16504" width="0.26648"
+                 height="0.16638"/>
+              </field>
+              <field name="F_UNIDADES_FONDO1" source="CS_UDS"
+               minWidowLines="1" formatMask="-NNN,NNN,NNN,NNN,NN0.00000000"
+               spacing="0" alignment="end">
+                <font face="Times New Roman" size="10" bold="yes"/>
+                <geometryInfo x="13.21875" y="1.16504" width="1.67712"
+                 height="0.16638"/>
+              </field>
+              <field name="F_RENDIMIENTOS_FONDO2" source="CS_RENDIMIENTOS_FON"
+               minWidowLines="1" formatMask="-NNN,NNN,NNN,NNN,NN0" spacing="0"
+               alignment="end">
+                <font face="Times New Roman" size="10" bold="yes"/>
+                <geometryInfo x="12.83032" y="1.16504" width="0.33655"
+                 height="0.16638"/>
+                <advancedLayout formatTrigger="f_rendimientos_fondo2formattri"
+                />
+              </field>
+            </frame>
+          </frame>
+          <field name="F_FONDO1" source="FON_RAZON_SOCIAL" minWidowLines="1"
+           spacing="0" alignment="start">
+            <font face="Times New Roman" size="10" bold="yes"/>
+            <geometryInfo x="0.71167" y="0.00000" width="7.23621"
+             height="0.16638"/>
+            <advancedLayout printObjectOnPage="allPage"
+             basePrintingOn="enclosingObject"/>
+          </field>
+          <text name="B_FONDO1" minWidowLines="1">
+            <textSettings spacing="0"/>
+            <geometryInfo x="0.05408" y="0.00000" width="0.59692"
+             height="0.16638"/>
+            <advancedLayout printObjectOnPage="allPage"
+             basePrintingOn="enclosingObject"/>
+            <textSegment>
+              <font face="Times New Roman" size="10" bold="yes"/>
+              <string>
+              <![CDATA[Fondo]]>
+              </string>
+            </textSegment>
+          </text>
+        </repeatingFrame>
+        <frame name="M_FONDOS_FTR1">
+          <geometryInfo x="0.00513" y="1.34167" width="25.32288"
+           height="0.17371"/>
+          <advancedLayout printObjectOnPage="lastPage"
+           basePrintingOn="anchoringObject"/>
+          <field name="F_CAPITAL_REPORTE1" source="CAPITAL REPORTE"
+           minWidowLines="1" formatMask="-NNN,NNN,NNN,NNN,NN0.00" spacing="0"
+           alignment="end">
+            <font face="Times New Roman" size="10" bold="yes"/>
+            <geometryInfo x="5.99487" y="1.34167" width="1.66138"
+             height="0.16638"/>
+          </field>
+          <text name="B_CAPITAL_REPORTE1" minWidowLines="1">
+            <textSettings spacing="0"/>
+            <geometryInfo x="0.03772" y="1.34167" width="1.82007"
+             height="0.16638"/>
+            <textSegment>
+              <font face="Times New Roman" size="10" bold="yes"/>
+              <string>
+              <![CDATA[Totales Reporte]]>
+              </string>
+            </textSegment>
+          </text>
+          <field name="F_INVERSION_REPORTE1" source="INVERSION REPORTE"
+           minWidowLines="1" formatMask="-NNN,NNN,NNN,NNN,NN0.00" spacing="0"
+           alignment="end">
+            <font face="Times New Roman" size="10" bold="yes"/>
+            <geometryInfo x="7.71875" y="1.34167" width="1.73328"
+             height="0.16638"/>
+          </field>
+          <field name="F_REND_RF_REPORTE1" source="REND RF REPORTE"
+           minWidowLines="1" formatMask="-NNN,NNN,NNN,NNN,NN0.00" spacing="0"
+           alignment="end">
+            <font face="Times New Roman" size="10" bold="yes"/>
+            <geometryInfo x="9.50647" y="1.34167" width="1.46741"
+             height="0.16638"/>
+          </field>
+          <field name="F_REND_RV_REPORTE1" source="REND RV REPORTE"
+           minWidowLines="1" formatMask="-NNN,NNN,NNN,NNN,NN0.00" spacing="0"
+           alignment="end">
+            <font face="Times New Roman" size="10" bold="yes"/>
+            <geometryInfo x="11.05713" y="1.34167" width="1.34900"
+             height="0.16638"/>
+          </field>
+          <field name="F_RTE_FTE_REPORTE1" source="RTE FTE REPORTE"
+           visible="no" minWidowLines="1" formatMask="-NNN,NNN,NNN,NNN,NN0"
+           spacing="0" alignment="end">
+            <font face="Times New Roman" size="10" bold="yes"/>
+            <geometryInfo x="12.47034" y="1.34351" width="0.26123"
+             height="0.16455"/>
+          </field>
+          <field name="F_UNIDADES_REPORTE1" source="UNIDADES REPORTE"
+           minWidowLines="1" formatMask="-NNN,NNN,NNN,NNN,NN0.00000000"
+           spacing="0" alignment="end">
+            <font face="Times New Roman" size="10" bold="yes"/>
+            <geometryInfo x="13.22070" y="1.34167" width="1.67517"
+             height="0.15808"/>
+          </field>
+          <field name="F_RENDIMIENTOS_REPORTE2" source="CS_RENDIMIENTOS_REP"
+           minWidowLines="1" formatMask="-NNN,NNN,NNN,NNN,NN0" spacing="0"
+           alignment="end">
+            <font face="Times New Roman" size="10" bold="yes"/>
+            <geometryInfo x="12.83508" y="1.34167" width="0.33142"
+             height="0.15808"/>
+          </field>
+        </frame>
+      </frame>
+    </body>
+    <margin>
+      <roundedRectangle name="B_8">
+        <geometryInfo x="3.90210" y="0.08875" width="6.31226" height="0.27820"
+        />
+        <visualSettings fillPattern="transparent" fillBackgroundColor="gray60"
+         linePattern="solid"/>
+        <points>
+          <point x="3.90210" y="0.08875"/>
+          <point x="6.31226" y="0.27820"/>
+          <point x="0.13794" y="0.13794"/>
+        </points>
+      </roundedRectangle>
+      <roundedRectangle name="B_7">
+        <geometryInfo x="3.87183" y="0.05200" width="6.31116" height="0.28125"
+        />
+        <visualSettings fillPattern="transparent" fillBackgroundColor="gray15"
+         linePattern="solid"/>
+        <points>
+          <point x="3.87183" y="0.05200"/>
+          <point x="6.31116" y="0.28125"/>
+          <point x="0.13794" y="0.13794"/>
+        </points>
+      </roundedRectangle>
+      <field name="F_USER_MARGIN" source="CG$C_USER" minWidowLines="1"
+       spacing="0" alignment="left">
+        <font face="Courier New" size="10"/>
+        <geometryInfo x="0.00513" y="0.57043" width="1.49109" height="0.16663"
+        />
+      </field>
+      <text name="CG$M1_MARGIN" minWidowLines="1">
+        <textSettings justify="right" spacing="0"/>
+        <geometryInfo x="4.78113" y="0.11475" width="1.64063" height="0.16663"
+        />
+        <textSegment>
+          <font face="Courier New" size="10" bold="yes"/>
+          <string>
+          <![CDATA[LIBRO APORTES DEL ]]>
+          </string>
+        </textSegment>
+      </text>
+      <field name="CG$PF_QUE_FECHA1" source="QUE_FECHA" minWidowLines="1"
+       spacing="0" alignment="left">
+        <font face="Courier New" size="10"/>
+        <geometryInfo x="6.54980" y="0.11475" width="0.93823" height="0.16663"
+        />
+      </field>
+      <field name="F_FECHA" source="CurrentDate" minWidowLines="1"
+       formatMask="DD-MON-YY HH24:MI:SS" spacing="0" alignment="right">
+        <font face="Courier New" size="10"/>
+        <geometryInfo x="11.40527" y="0.00659" width="1.89575"
+         height="0.15625"/>
+      </field>
+      <field name="F_1" source="PageNumber" minWidowLines="1"
+       formatMask="-N,NNN" spacing="0" alignment="left">
+        <font face="Courier New" size="10"/>
+        <geometryInfo x="12.69690" y="0.34302" width="0.58325"
+         height="0.15613"/>
+        <pageNumbering header="yes" main="yes" trailer="yes" startAt="1"
+         incrementBy="1" resetAt="report"/>
+      </field>
+      <text name="B_1" minWidowLines="1">
+        <textSettings justify="left" spacing="0"/>
+        <geometryInfo x="12.07190" y="0.34290" width="0.58337"
+         height="0.16663"/>
+        <textSegment>
+          <font face="Courier New" size="10"/>
+          <string>
+          <![CDATA[Pagina:]]>
+          </string>
+        </textSegment>
+      </text>
+      <field name="F_desc_qtipo" source="Q_TIPODESC" minWidowLines="1"
+       spacing="0" alignment="left">
+        <font face="Courier New" size="9" bold="yes"/>
+        <geometryInfo x="7.55054" y="0.11475" width="2.15784" height="0.16663"
+        />
+        <visualSettings fillForegroundColor="gray60"
+         fillBackgroundColor="gray60"/>
+      </field>
+      <text name="B_2" minWidowLines="1">
+        <textSettings justify="left" spacing="0"/>
+        <geometryInfo x="12.37036" y="0.15918" width="0.93250"
+         height="0.19128"/>
+        <visualSettings lineWidth="4"/>
+        <textSegment>
+          <font face="Courier New" size="10"/>
+          <string>
+          <![CDATA[LIAPAN.REP]]>
+          </string>
+        </textSegment>
+      </text>
+    </margin>
+  </section>
+  </layout>
+  <parameterForm width="10.00000" height="8.00000">
+    <rulers numberOfSnapPoints="4"/>
+  <roundedRectangle name="PB_10" pageNumber="1">
+    <geometryInfo x="0.65698" y="0.12610" width="4.62231" height="0.62915"/>
+    <visualSettings fillPattern="solid" fillForegroundColor="gray60"
+     linePattern="solid"/>
+    <points>
+      <point x="0.65698" y="0.12610"/>
+      <point x="4.62231" y="0.62915"/>
+      <point x="0.13794" y="0.13794"/>
+    </points>
+  </roundedRectangle>
+  <roundedRectangle name="PB_9" pageNumber="1">
+    <geometryInfo x="0.61255" y="0.10010" width="4.62231" height="0.62915"/>
+    <visualSettings fillPattern="solid" fillForegroundColor="gray15"
+     linePattern="solid"/>
+    <points>
+      <point x="0.61255" y="0.10010"/>
+      <point x="4.62231" y="0.62915"/>
+      <point x="0.13794" y="0.13794"/>
+    </points>
+  </roundedRectangle>
+  <text name="CG$AT_APP_TITLE" pageNumber="1" minWidowLines="1">
+    <textSettings justify="center" spacing="0"/>
+    <geometryInfo x="0.00000" y="0.00000" width="0.00000" height="0.00000"/>
+    <textSegment>
+      <font face="Letter Gothic" size="12"/>
+      <string>
+      <![CDATA[#NULL#]]>
+      </string>
+    </textSegment>
+  </text>
+  <text name="CG$PB_QUE_FECHA1" pageNumber="1" minWidowLines="1">
+    <textSettings justify="right" spacing="0"/>
+    <geometryInfo x="0.56628" y="3.93823" width="0.70349" height="0.17920"/>
+    <textSegment>
+      <font face="Arial" size="9" bold="yes"/>
+      <string>
+      <![CDATA[Fecha:]]>
+      </string>
+    </textSegment>
+  </text>
+  <text name="CG$PB_QUE_SUCURSAL1" pageNumber="1" minWidowLines="1">
+    <textSettings justify="right" spacing="0"/>
+    <geometryInfo x="0.56628" y="2.94580" width="0.70349" height="0.17920"/>
+    <textSegment>
+      <font face="Arial" size="9" bold="yes"/>
+      <string>
+      <![CDATA[Fondo:]]>
+      </string>
+    </textSegment>
+  </text>
+  <text name="CG$CN_COMPANAY_NAME" pageNumber="1" minWidowLines="1">
+    <textSettings justify="center" spacing="0"/>
+    <geometryInfo x="1.10144" y="0.18896" width="3.63330" height="0.19995"/>
+    <textSegment>
+      <font face="Arial" size="12" bold="yes"/>
+      <string>
+      <![CDATA[Corredores Davivienda S.A.]]>
+      </string>
+    </textSegment>
+  </text>
+  <field name="PF_OUTPUT_DEVICE" source="DESTYPE" pageNumber="1"
+   minWidowLines="1" spacing="0">
+    <font size="0"/>
+    <geometryInfo x="1.37549" y="1.38037" width="5.01636" height="0.23303"/>
+    <visualSettings lineWidth="1" linePattern="solid"/>
+  </field>
+  <text name="PB_OUTPUT_DEVICE_PROMPT" pageNumber="1" minWidowLines="1">
+    <textSettings justify="right" spacing="0"/>
+    <geometryInfo x="0.15173" y="1.44666" width="1.11804" height="0.19800"/>
+    <textSegment>
+      <font face="Arial" size="9" bold="yes"/>
+      <string>
+      <![CDATA[Tipo Destino:]]>
+      </string>
+    </textSegment>
+  </text>
+  <text name="PB_FILENAME_PROMPT" pageNumber="1" minWidowLines="1">
+    <textSettings justify="right" spacing="0"/>
+    <geometryInfo x="0.15173" y="1.75867" width="1.11804" height="0.19788"/>
+    <textSegment>
+      <font face="Arial" size="9" bold="yes"/>
+      <string>
+      <![CDATA[Nombre Destino:]]>
+      </string>
+    </textSegment>
+  </text>
+  <field name="PF_OUTPUT_FILE" source="DESNAME" pageNumber="1"
+   minWidowLines="1" spacing="0">
+    <font size="0"/>
+    <geometryInfo x="1.37549" y="1.69226" width="5.01636" height="0.23303"/>
+    <visualSettings lineWidth="1" linePattern="solid"/>
+  </field>
+  <field name="CG$PF_QUE_FECHA1" source="QUE_FECHA" pageNumber="1"
+   minWidowLines="1" spacing="0">
+    <font size="0"/>
+    <geometryInfo x="1.37549" y="3.88989" width="5.04932" height="0.25452"/>
+    <visualSettings lineWidth="1" linePattern="solid"/>
+  </field>
+  <field name="CG$PF_QUE_Fondo" source="QUE_FONDO" pageNumber="1"
+   minWidowLines="1" spacing="0">
+    <font size="0"/>
+    <geometryInfo x="1.37549" y="2.90625" width="7.31201" height="0.25452"/>
+    <visualSettings lineWidth="1" linePattern="solid"/>
+  </field>
+  <text name="CG$MN_MODULE_NAME" pageNumber="1" minWidowLines="1">
+    <textSettings justify="center" spacing="0"/>
+    <geometryInfo x="1.11462" y="0.44934" width="3.68750" height="0.23352"/>
+    <textSegment>
+      <font face="Arial" size="12"/>
+      <string>
+      <![CDATA[Libro aportes clientes dias cerrados]]>
+      </string>
+    </textSegment>
+  </text>
+  <text name="PB_NUM_COPIES_PROMPT" pageNumber="1" minWidowLines="1">
+    <textSettings justify="right" spacing="0"/>
+    <geometryInfo x="0.02649" y="2.07410" width="1.24329" height="0.19434"/>
+    <textSegment>
+      <font face="Arial" size="9" bold="yes"/>
+      <string>
+      <![CDATA[Numero de Copias:]]>
+      </string>
+    </textSegment>
+  </text>
+  <field name="PF_COPIES" source="COPIES" pageNumber="1" minWidowLines="1"
+   spacing="0">
+    <font size="0"/>
+    <geometryInfo x="1.37549" y="2.00415" width="5.01636" height="0.23303"/>
+    <visualSettings lineWidth="1" linePattern="solid"/>
+  </field>
+  <field name="PF_Modo" source="MODE" pageNumber="1" minWidowLines="1"
+   spacing="0">
+    <font size="0"/>
+    <geometryInfo x="1.37549" y="2.31128" width="5.01636" height="0.23303"/>
+    <visualSettings lineWidth="1" linePattern="solid"/>
+  </field>
+  <text name="PB_1" pageNumber="1" minWidowLines="1">
+    <textSettings justify="right" spacing="0"/>
+    <geometryInfo x="0.15173" y="2.36719" width="1.11804" height="0.20837"/>
+    <textSegment>
+      <font face="Arial" size="9" bold="yes"/>
+      <string>
+      <![CDATA[Modo:]]>
+      </string>
+    </textSegment>
+  </text>
+  <text name="PB_2" pageNumber="1" minWidowLines="1">
+    <textSettings justify="right" spacing="0"/>
+    <geometryInfo x="0.56628" y="3.58386" width="0.70349" height="0.17920"/>
+    <textSegment>
+      <font face="Arial" size="9" bold="yes"/>
+      <string>
+      <![CDATA[Corredor:]]>
+      </string>
+    </textSegment>
+  </text>
+  <field name="PF_que_suc" source="QUE_SUCURSAL" pageNumber="1"
+   minWidowLines="1" spacing="0">
+    <font size="0"/>
+    <geometryInfo x="1.37549" y="3.22937" width="5.04932" height="0.25452"/>
+    <visualSettings lineWidth="1" linePattern="solid"/>
+  </field>
+  <text name="PB_3" pageNumber="1" minWidowLines="1">
+    <textSettings justify="right" spacing="0"/>
+    <geometryInfo x="0.56628" y="3.28149" width="0.70349" height="0.17920"/>
+    <textSegment>
+      <font face="Arial" size="9" bold="yes"/>
+      <string>
+      <![CDATA[Sucursal:]]>
+      </string>
+    </textSegment>
+  </text>
+  <field name="PF_que_corr" source="QUE_CORREDOR" pageNumber="1"
+   minWidowLines="1" spacing="0">
+    <font size="0"/>
+    <geometryInfo x="1.37549" y="3.55859" width="5.04932" height="0.25452"/>
+    <visualSettings lineWidth="1" linePattern="solid"/>
+  </field>
+  <text name="PB_5" pageNumber="1" minWidowLines="1">
+    <textSettings justify="right" spacing="0"/>
+    <geometryInfo x="0.33508" y="4.28113" width="0.93469" height="0.17920"/>
+    <textSegment>
+      <font face="Arial" size="9" bold="yes"/>
+      <string>
+      <![CDATA[Despues de:]]>
+      </string>
+    </textSegment>
+  </text>
+  <field name="PF_TIPO" source="QTIPO" pageNumber="1" minWidowLines="1"
+   spacing="0">
+    <font size="0"/>
+    <geometryInfo x="1.37549" y="4.23279" width="5.04932" height="0.25452"/>
+    <visualSettings lineWidth="1" linePattern="solid"/>
+  </field>
+  <field name="PF_1" source="ORIENTATION" pageNumber="1" minWidowLines="1"
+   spacing="0">
+    <font size="0"/>
+    <geometryInfo x="1.37549" y="2.60278" width="5.03442" height="0.23303"/>
+    <visualSettings lineWidth="1" linePattern="solid"/>
+  </field>
+  <text name="PB_6" pageNumber="1" minWidowLines="1">
+    <textSettings justify="right" spacing="0"/>
+    <geometryInfo x="0.28345" y="2.65869" width="0.98633" height="0.20837"/>
+    <textSegment>
+      <font face="Arial" size="9" bold="yes"/>
+      <string>
+      <![CDATA[Orientacion:]]>
+      </string>
+    </textSegment>
+  </text>
+  </parameterForm>
+  <programUnits>
+    <function name="cg$c_user_fmla" returnType="character">
+      <textSource>
+      <![CDATA[function CG$C_USER_FMLA return VARCHAR2 is
+BEGIN
+   RETURN(USER);
+END;
+]]>
+      </textSource>
+    </function>
+    <function name="cgpf$set_sysdate_param">
+      <textSource>
+      <![CDATA[PROCEDURE CGPF$SET_SYSDATE_PARAM IS
+-- inialise the SYSDATE parameter to current date
+
+BEGIN
+  :CG$P_SYSDATE := SYSDATE;
+END;]]>
+      </textSource>
+    </function>
+    <function name="beforepform">
+      <textSource>
+      <![CDATA[function BeforePForm return boolean is
+begin
+  -- inialise the SYSDATE parameter to current date
+  CGPF$SET_SYSDATE_PARAM;
+
+  return (TRUE);
+end;]]>
+      </textSource>
+    </function>
+    <function name="cuentaformula" returnType="character">
+      <textSource>
+      <![CDATA[function CUENTAFormula return Char is
+begin
+  RETURN	:MCF_CFO_CCC_CLI_PER_TID_CODIGO||'-'||		:MCF_CFO_CCC_CLI_PER_NUM_IDEN||'-'||		TO_CHAR(:MCF_CFO_CCC_NUMERO_CUENTA)||'-'||		:FON_MNEMONICO||		TO_CHAR(:MCF_CFO_CODIGO);
+end;]]>
+      </textSource>
+    </function>
+    <function name="afterreport">
+      <textSource>
+      <![CDATA[function AfterReport return boolean is
+   CURSOR C_TABLA IS
+      SELECT 'X' 
+      FROM   USER_TABLES
+      WHERE  TABLE_NAME = 'TS_MOVIMIENTOS_FONDOS';
+   COND1   VARCHAR2(1);
+begin
+  OPEN C_TABLA;
+  FETCH C_TABLA INTO COND1;
+  CLOSE C_TABLA;
+  IF NVL(COND1,' ') = 'X' THEN
+  	SRW.DO_SQL('DROP TABLE TS_MOVIMIENTOS_FONDOS');
+  END IF;
+  return (TRUE);
+end;]]>
+      </textSource>
+    </function>
+    <function name="cf_retencionformula" returnType="number">
+      <textSource>
+      <![CDATA[function CF_RETENCIONFormula return Number is
+   CURSOR C_RETENCION IS
+      SELECT DMF_RENDIMIENTOS
+            ,DMF_RETENCION
+            ,DMF_DIFERENCIA_CAMBIO          
+      FROM   DETALLES_MOVIMIENTOS_FONDOS
+      WHERE  DMF_MCF_CONSECUTIVO = :MCF_CONSECUTIVO; --rhenao	
+/*      WHERE  DMF_MCF_CFO_CCC_CLI_PER_NUM_ID = :MCF_CFO_CCC_CLI_PER_NUM_IDEN
+      AND    DMF_MCF_CFO_CCC_CLI_PER_TID_CO = :MCF_CFO_CCC_CLI_PER_TID_CODIGO
+      AND    DMF_MCF_CFO_CCC_NUMERO_CUENTA = :MCF_CFO_CCC_NUMERO_CUENTA
+      AND    DMF_MCF_CFO_FON_CODIGO = :MCF_CFO_FON_CODIGO
+      AND    DMF_MCF_CFO_CODIGO = :MCF_CFO_CODIGO 
+      AND    DMF_MCF_FECHA = :MCF_FECHA; */ --rhenao
+   DMF1   C_RETENCION%ROWTYPE;
+begin
+   IF :FON_TIPO = 'A' AND
+      :FON_BMO_MNEMONICO != 'PESOS' THEN
+      OPEN C_RETENCION;
+      FETCH C_RETENCION INTO DMF1;
+      CLOSE C_RETENCION;
+      :CP_RENDIMIENTOS := NVL(DMF1.DMF_RENDIMIENTOS + DMF1.DMF_DIFERENCIA_CAMBIO,0);
+      RETURN NVL(DMF1.DMF_RETENCION,0);
+   ELSE
+      RETURN NVL(:MCF_SALDO_RETEFUENTE5,0);
+   END IF;
+end;]]>
+      </textSource>
+    </function>
+    <function name="f_rendimientos_fondo2formattri">
+      <textSource>
+      <![CDATA[function F_RENDIMIENTOS_FONDO2FormatTri return boolean is
+begin
+   IF :FON_TIPO = 'A' AND
+      :FON_BMO_MNEMONICO != 'PESOS' THEN
+      RETURN (TRUE);
+   ELSE
+      RETURN (FALSE);
+   END IF;
+end;
+]]>
+      </textSource>
+    </function>
+    <function name="f_rendimientos_sucursal2format">
+      <textSource>
+      <![CDATA[function F_RENDIMIENTOS_SUCURSAL2Format return boolean is
+begin
+   IF :FON_TIPO = 'A' AND
+      :FON_BMO_MNEMONICO != 'PESOS' THEN
+      RETURN (TRUE);
+   ELSE
+      RETURN (FALSE);
+   END IF;
+end;
+]]>
+      </textSource>
+    </function>
+    <function name="f_rendimientos_fte2formattrigg">
+      <textSource>
+      <![CDATA[function F_RENDIMIENTOS_FTE2FormatTrigg return boolean is
+begin
+   IF :FON_TIPO = 'A' AND
+      :FON_BMO_MNEMONICO != 'PESOS' THEN
+      RETURN (TRUE);
+   ELSE
+      RETURN (FALSE);
+   END IF;
+end;
+]]>
+      </textSource>
+    </function>
+    <function name="b_rte_fte3formattrigger">
+      <textSource>
+      <![CDATA[function B_RTE_FTE3FormatTrigger return boolean is
+begin
+   IF :FON_TIPO = 'A' AND
+      :FON_BMO_MNEMONICO != 'PESOS' THEN
+      RETURN (TRUE);
+   ELSE
+      RETURN (FALSE);
+   END IF;
+end;
+]]>
+      </textSource>
+    </function>
+    <function name="beforereport">
+      <textSource>
+      <![CDATA[function BeforeReport return boolean is
+   CURSOR C_TABLA IS
+      SELECT 'X' 
+      FROM   USER_TABLES
+      WHERE  TABLE_NAME = 'TS_MOVIMIENTOS_FONDOS';
+   COND1   VARCHAR2(1);
+   
+   CURSOR C_FONDO IS
+      SELECT FON_TIPO
+            ,FON_BMO_MNEMONICO
+      FROM   FONDOS
+      WHERE  FON_CODIGO = :QUE_FONDO;
+   FON1  C_FONDO%ROWTYPE;
+begin
+  IF :QTIPO = 'D' THEN
+     :Q_TIPOMOV := 'D';
+     :Q_TIPODESC := 'Despues de Distribucion';
+  ELSIF :QTIPO = 'C' THEN
+     OPEN C_FONDO;
+     FETCH C_FONDO INTO FON1;
+     CLOSE C_FONDO;
+     IF FON1.FON_TIPO = 'A' AND
+        FON1.FON_BMO_MNEMONICO != 'PESOS' THEN
+        :Q_TIPOMOV := 'CR';
+     ELSE
+        :Q_TIPOMOV := 'C';
+     END IF;
+     :Q_TIPODESC :='Despues de Capitalizacion';
+  ELSIF :QTIPO = 'O' THEN
+     :Q_TIPOMOV := 'O';     	
+  END IF;
+  
+  OPEN C_TABLA;
+  FETCH C_TABLA INTO COND1;
+  CLOSE C_TABLA;
+  IF NVL(COND1,' ') = 'X' THEN
+  	SRW.DO_SQL('DROP TABLE TS_MOVIMIENTOS_FONDOS');
+  END IF;
+  SRW.DO_SQL(' CREATE TABLE TS_MOVIMIENTOS_FONDOS ' ||
+         ' STORAGE ' ||
+         ' ( ' ||
+         ' INITIAL 16384 ' ||
+         ' NEXT 16384 ' ||
+         ' PCTINCREASE 0 ' ||
+         ' MINEXTENTS 1 ' ||
+         ' MAXEXTENTS 9999 ' ||
+         ' ) ' ||
+         ' TABLESPACE DESARROLLO ' ||
+         ' AS ' ||
+         ' SELECT MCF_CFO_CCC_CLI_PER_NUM_IDEN ' ||
+         '      ,MCF_CFO_CCC_CLI_PER_TID_CODIGO ' ||
+         '      ,MCF_CFO_CCC_NUMERO_CUENTA ' ||
+         '      ,MCF_CFO_FON_CODIGO ' ||
+         '      ,MCF_CFO_CODIGO ' ||
+         '      ,MCF_CONSECUTIVO ' ||										-- rhenao
+         '      ,MCF_FECHA ' ||
+         '      ,MCF_TMF_MNEMONICO ' ||              
+         '      ,MCF_SALDO_INVER ' ||
+         '      ,MCF_SALDO_CAPITAL ' ||               
+         '      ,MCF_SALDO_UNIDADES ' ||              
+         '      ,MCF_SALDO_RENDIMIENTOS_RF ' ||
+         '      ,MCF_SALDO_RENDIMIENTOS_RV ' ||  
+         '      ,MCF_SALDO_RETEFUENTE ' ||            
+         '      ,MCF_SALDO_INTERESES_PAGADOS ' ||
+         ' FROM   MOVIMIENTOS_CUENTAS_FONDOS mcf1 ' ||
+         ' WHERE  MCF1.MCF_FECHA >= ' || '''' || TO_CHAR(:QUE_FECHA,'DD-MON-YYYY') || '''' ||
+         ' AND    MCF1.MCF_FECHA < ' || '''' || TO_CHAR(:QUE_FECHA + 1,'DD-MON-YYYY') || '''');
+  :P_TABLA := 'TS_MOVIMIENTOS_FONDOS';
+  return (TRUE);
+end;]]>
+      </textSource>
+    </function>
+    <function name="que_sucursalvalidtrigger">
+      <textSource>
+      <![CDATA[function QUE_SUCURSALValidTrigger return boolean is
+begin
+  
+  return (TRUE);
+end;]]>
+      </textSource>
+    </function>
+    <function name="b_rte_fte2formattrigger">
+      <textSource>
+      <![CDATA[function B_RTE_FTE2FormatTrigger return boolean is
+begin
+  
+  return (FALSE);
+end;]]>
+      </textSource>
+    </function>
+    <function name="cf_segmentoformula" returnType="character">
+      <textSource>
+      <![CDATA[function CF_SEGMENTOFormula return VARCHAR2 is
+  cli_segmento VARCHAR2(30);
+begin
+  SELECT BSC_DESCRIPCION
+   INTO cli_segmento
+   FROM CLIENTES,
+        BI_SEGMENTACION_CLIENTES
+  WHERE CLI_PER_TID_CODIGO = :MCF_CFO_CCC_CLI_PER_TID_CODIGO
+    AND CLI_PER_NUM_IDEN = :MCF_CFO_CCC_CLI_PER_NUM_IDEN
+    AND BSC_MNEMONICO = CLI_BSC_MNEMONICO
+    AND BSC_BCC_MNEMONICO = CLI_BSC_BCC_MNEMONICO;
+  
+  return cli_segmento;
+exception
+	when others then
+	  return null;
+end;]]>
+      </textSource>
+    </function>
+    <function name="cf_categorizacionformula" returnType="character">
+      <textSource>
+      <![CDATA[function CF_CATEGORIZACIONFormula return varchar2 is
+  cli_categorizacion varchar2(35);
+begin
+  SELECT decode(CLI_PROFESIONAL,'S','CLIENTE PROFESIONAL MERCADO','N','CLIENTE INVERSIONISTA','Sin Informacion') 
+    into cli_categorizacion
+    FROM CLIENTES
+  WHERE CLI_PER_TID_CODIGO = :MCF_CFO_CCC_CLI_PER_TID_CODIGO
+    AND CLI_PER_NUM_IDEN = :MCF_CFO_CCC_CLI_PER_NUM_IDEN
+    ;
+  
+  return cli_categorizacion;
+exception
+	when others then
+	  return null;
+end;]]>
+      </textSource>
+    </function>
+  </programUnits>
+  <webSource>
+  <![CDATA[<%@ taglib uri="/WEB-INF/lib/reports_tld.jar" prefix="rw" %> 
+<%@ page language="java" import="java.io.*" errorPage="/rwerror.jsp" session="false" %>
+<%@ page contentType="text/html;charset=ISO-8859-1" %>
+<!--
+<rw:report id="report"> 
+<rw:objects id="objects">
+</rw:objects>
+-->
+
+<html>
+
+<head>
+<meta name="GENERATOR" content="Oracle 11gR1 Reports Developer"/>
+<title> Your Title </title>
+
+<rw:style id="yourStyle">
+   <!-- Report Wizard inserts style link clause here -->
+</rw:style>
+
+</head>
+
+
+<body>
+
+<rw:dataArea id="yourDataArea">
+   <!-- Report Wizard inserts the default jsp here -->
+</rw:dataArea>
+
+
+
+</body>
+</html>
+
+<!--
+</rw:report> 
+-->
+]]>
+  </webSource>
+  <colorPalette>
+    <color index="2" displayName="r0g0b0" value="#000000"/>
+    <color index="3" displayName="r40g0b0" value="#660000"/>
+    <color index="4" displayName="r55g0b0" value="#8c0000"/>
+    <color index="5" displayName="r70g0b0" value="#b30000"/>
+    <color index="6" displayName="r85g0b0" value="#d90000"/>
+    <color index="7" displayName="r100g0b0" value="#ff0000"/>
+    <color index="8" displayName="r0g0b40" value="#000066"/>
+    <color index="9" displayName="r40g0b40" value="#660066"/>
+    <color index="10" displayName="r55g0b40" value="#8c0066"/>
+    <color index="11" displayName="r70g0b40" value="#b30066"/>
+    <color index="12" displayName="r85g0b40" value="#d90066"/>
+    <color index="13" displayName="r100g0b40" value="#ff0066"/>
+    <color index="14" displayName="r0g0b55" value="#00008c"/>
+    <color index="15" displayName="r40g0b55" value="#66008c"/>
+    <color index="16" displayName="r55g0b55" value="#8c008c"/>
+    <color index="17" displayName="r70g0b55" value="#b3008c"/>
+    <color index="18" displayName="r85g0b55" value="#d9008c"/>
+    <color index="19" displayName="r100g0b55" value="#ff008c"/>
+    <color index="20" displayName="r0g0b70" value="#0000b3"/>
+    <color index="21" displayName="r40g0b70" value="#6600b3"/>
+    <color index="22" displayName="r55g0b70" value="#8c00b3"/>
+    <color index="23" displayName="r70g0b70" value="#b300b3"/>
+    <color index="24" displayName="r85g0b70" value="#d900b3"/>
+    <color index="25" displayName="r100g0b70" value="#ff00b3"/>
+    <color index="26" displayName="r0g0b85" value="#0000d9"/>
+    <color index="27" displayName="r40g0b85" value="#6600d9"/>
+    <color index="28" displayName="r55g0b85" value="#8c00d9"/>
+    <color index="29" displayName="r70g0b85" value="#b300d9"/>
+    <color index="30" displayName="r85g0b85" value="#d900d9"/>
+    <color index="31" displayName="r100g0b85" value="#ff00d9"/>
+    <color index="33" displayName="r40g0b100" value="#6600ff"/>
+    <color index="34" displayName="r55g0b100" value="#8c00ff"/>
+    <color index="35" displayName="r70g0b100" value="#b300ff"/>
+    <color index="36" displayName="r85g0b100" value="#d900ff"/>
+    <color index="38" displayName="gray60" value="#666666"/>
+    <color index="39" displayName="blue" value="#0000ff"/>
+    <color index="40" displayName="r0g40b0" value="#006600"/>
+    <color index="41" displayName="r40g40b0" value="#666600"/>
+    <color index="42" displayName="r55g40b0" value="#8c6600"/>
+    <color index="43" displayName="r70g40b0" value="#b36600"/>
+    <color index="44" displayName="r85g40b0" value="#d96600"/>
+    <color index="45" displayName="r100g40b0" value="#ff6600"/>
+    <color index="46" displayName="r0g40b40" value="#006666"/>
+    <color index="47" displayName="r40g40b40" value="#666666"/>
+    <color index="48" displayName="r55g40b40" value="#8c6666"/>
+    <color index="49" displayName="r70g40b40" value="#b36666"/>
+    <color index="50" displayName="r85g40b40" value="#d96666"/>
+    <color index="51" displayName="r100g40b40" value="#ff6666"/>
+    <color index="52" displayName="r0g40b55" value="#00668c"/>
+    <color index="53" displayName="r40g40b55" value="#66668c"/>
+    <color index="54" displayName="r55g40b55" value="#8c668c"/>
+    <color index="55" displayName="r70g40b55" value="#b3668c"/>
+    <color index="56" displayName="r85g40b55" value="#d9668c"/>
+    <color index="57" displayName="r100g40b55" value="#ff668c"/>
+    <color index="58" displayName="r0g40b70" value="#0066b3"/>
+    <color index="59" displayName="r40g40b70" value="#6666b3"/>
+    <color index="60" displayName="r55g40b70" value="#8c66b3"/>
+    <color index="61" displayName="r70g40b70" value="#b366b3"/>
+    <color index="62" displayName="r85g40b70" value="#d966b3"/>
+    <color index="63" displayName="r100g40b70" value="#ff66b3"/>
+    <color index="64" displayName="r0g40b85" value="#0066d9"/>
+    <color index="65" displayName="r40g40b85" value="#6666d9"/>
+    <color index="66" displayName="r55g40b85" value="#8c66d9"/>
+    <color index="67" displayName="r70g40b85" value="#b366d9"/>
+    <color index="68" displayName="r85g40b85" value="#d966d9"/>
+    <color index="69" displayName="r100g40b85" value="#ff66d9"/>
+    <color index="70" displayName="r0g40b100" value="#0066ff"/>
+    <color index="71" displayName="r40g40b100" value="#6666ff"/>
+    <color index="72" displayName="r55g40b100" value="#8c66ff"/>
+    <color index="73" displayName="r70g40b100" value="#b366ff"/>
+    <color index="74" displayName="r85g40b100" value="#d966ff"/>
+    <color index="75" displayName="r100g40b100" value="#ff66ff"/>
+    <color index="76" displayName="gray45" value="#8c8c8c"/>
+    <color index="77" displayName="magenta" value="#ff00ff"/>
+    <color index="78" displayName="r0g55b0" value="#008c00"/>
+    <color index="79" displayName="r40g55b0" value="#668c00"/>
+    <color index="80" displayName="r55g55b0" value="#8c8c00"/>
+    <color index="81" displayName="r70g55b0" value="#b38c00"/>
+    <color index="82" displayName="r85g55b0" value="#d98c00"/>
+    <color index="83" displayName="r100g55b0" value="#ff8c00"/>
+    <color index="84" displayName="r0g55b40" value="#008c66"/>
+    <color index="85" displayName="r40g55b40" value="#668c66"/>
+    <color index="86" displayName="r55g55b40" value="#8c8c66"/>
+    <color index="87" displayName="r70g55b40" value="#b38c66"/>
+    <color index="88" displayName="r85g55b40" value="#d98c66"/>
+    <color index="89" displayName="r100g55b40" value="#ff8c66"/>
+    <color index="90" displayName="r0g55b55" value="#008c8c"/>
+    <color index="91" displayName="r40g55b55" value="#668c8c"/>
+    <color index="92" displayName="r55g55b55" value="#8c8c8c"/>
+    <color index="93" displayName="r70g55b55" value="#b38c8c"/>
+    <color index="94" displayName="r85g55b55" value="#d98c8c"/>
+    <color index="95" displayName="r100g55b55" value="#ff8c8c"/>
+    <color index="96" displayName="r0g55b70" value="#008cb3"/>
+    <color index="97" displayName="r40g55b70" value="#668cb3"/>
+    <color index="98" displayName="r55g55b70" value="#8c8cb3"/>
+    <color index="99" displayName="r70g55b70" value="#b38cb3"/>
+    <color index="100" displayName="r85g55b70" value="#d98cb3"/>
+    <color index="101" displayName="r100g55b70" value="#ff8cb3"/>
+    <color index="102" displayName="r0g55b85" value="#008cd9"/>
+    <color index="103" displayName="r40g55b85" value="#668cd9"/>
+    <color index="104" displayName="r55g55b85" value="#8c8cd9"/>
+    <color index="105" displayName="r70g55b85" value="#b38cd9"/>
+    <color index="106" displayName="r85g55b85" value="#d98cd9"/>
+    <color index="107" displayName="r100g55b85" value="#ff8cd9"/>
+    <color index="108" displayName="r0g55b100" value="#008cff"/>
+    <color index="109" displayName="r40g55b100" value="#668cff"/>
+    <color index="110" displayName="r55g55b100" value="#8c8cff"/>
+    <color index="111" displayName="r70g55b100" value="#b38cff"/>
+    <color index="112" displayName="r85g55b100" value="#d98cff"/>
+    <color index="113" displayName="r100g55b100" value="#ff8cff"/>
+    <color index="114" displayName="gray30" value="#b3b3b3"/>
+    <color index="115" displayName="red" value="#ff0000"/>
+    <color index="116" displayName="r0g70b0" value="#00b300"/>
+    <color index="117" displayName="r40g70b0" value="#66b300"/>
+    <color index="118" displayName="r55g70b0" value="#8cb300"/>
+    <color index="119" displayName="r70g70b0" value="#b3b300"/>
+    <color index="120" displayName="r85g70b0" value="#d9b300"/>
+    <color index="121" displayName="r100g70b0" value="#ffb300"/>
+    <color index="122" displayName="r0g70b40" value="#00b366"/>
+    <color index="123" displayName="r40g70b40" value="#66b366"/>
+    <color index="124" displayName="r55g70b40" value="#8cb366"/>
+    <color index="125" displayName="r70g70b40" value="#b3b366"/>
+    <color index="126" displayName="r85g70b40" value="#d9b366"/>
+    <color index="127" displayName="r100g70b40" value="#ffb366"/>
+    <color index="128" displayName="r0g70b55" value="#00b38c"/>
+    <color index="129" displayName="r40g70b55" value="#66b38c"/>
+    <color index="130" displayName="r55g70b55" value="#8cb38c"/>
+    <color index="131" displayName="r70g70b55" value="#b3b38c"/>
+    <color index="132" displayName="r85g70b55" value="#d9b38c"/>
+    <color index="133" displayName="r100g70b55" value="#ffb38c"/>
+    <color index="134" displayName="r0g70b70" value="#00b3b3"/>
+    <color index="135" displayName="r40g70b70" value="#66b3b3"/>
+    <color index="136" displayName="r55g70b70" value="#8cb3b3"/>
+    <color index="137" displayName="r70g70b70" value="#b3b3b3"/>
+    <color index="138" displayName="r85g70b70" value="#d9b3b3"/>
+    <color index="139" displayName="r100g70b70" value="#ffb3b3"/>
+    <color index="140" displayName="r0g70b85" value="#00b3d9"/>
+    <color index="141" displayName="r40g70b85" value="#66b3d9"/>
+    <color index="142" displayName="r55g70b85" value="#8cb3d9"/>
+    <color index="143" displayName="r70g70b85" value="#b3b3d9"/>
+    <color index="144" displayName="r85g70b85" value="#d9b3d9"/>
+    <color index="145" displayName="r100g70b85" value="#ffb3d9"/>
+    <color index="146" displayName="r0g70b100" value="#00b3ff"/>
+    <color index="147" displayName="r40g70b100" value="#66b3ff"/>
+    <color index="148" displayName="r55g70b100" value="#8cb3ff"/>
+    <color index="149" displayName="r70g70b100" value="#b3b3ff"/>
+    <color index="150" displayName="r85g70b100" value="#d9b3ff"/>
+    <color index="151" displayName="r100g70b100" value="#ffb3ff"/>
+    <color index="152" displayName="gray15" value="#d9d9d9"/>
+    <color index="153" displayName="cyan" value="#00ffff"/>
+    <color index="154" displayName="r0g85b0" value="#00d900"/>
+    <color index="155" displayName="r40g85b0" value="#66d900"/>
+    <color index="156" displayName="r55g85b0" value="#8cd900"/>
+    <color index="157" displayName="r70g85b0" value="#b3d900"/>
+    <color index="158" displayName="r85g85b0" value="#d9d900"/>
+    <color index="159" displayName="r100g85b0" value="#ffd900"/>
+    <color index="160" displayName="r0g85b40" value="#00d966"/>
+    <color index="161" displayName="r40g85b40" value="#66d966"/>
+    <color index="162" displayName="r55g85b40" value="#8cd966"/>
+    <color index="163" displayName="r70g85b40" value="#b3d966"/>
+    <color index="164" displayName="r85g85b40" value="#d9d966"/>
+    <color index="165" displayName="r100g85b40" value="#ffd966"/>
+    <color index="166" displayName="r0g85b55" value="#00d98c"/>
+    <color index="167" displayName="r40g85b55" value="#66d98c"/>
+    <color index="168" displayName="r55g85b55" value="#8cd98c"/>
+    <color index="169" displayName="r70g85b55" value="#b3d98c"/>
+    <color index="170" displayName="r85g85b55" value="#d9d98c"/>
+    <color index="171" displayName="r100g85b55" value="#ffd98c"/>
+    <color index="172" displayName="r0g85b70" value="#00d9b3"/>
+    <color index="173" displayName="r40g85b70" value="#66d9b3"/>
+    <color index="174" displayName="r55g85b70" value="#8cd9b3"/>
+    <color index="175" displayName="r70g85b70" value="#b3d9b3"/>
+    <color index="176" displayName="r85g85b70" value="#d9d9b3"/>
+    <color index="177" displayName="r100g85b70" value="#ffd9b3"/>
+    <color index="178" displayName="r0g85b85" value="#00d9d9"/>
+    <color index="179" displayName="r40g85b85" value="#66d9d9"/>
+    <color index="180" displayName="r55g85b85" value="#8cd9d9"/>
+    <color index="181" displayName="r70g85b85" value="#b3d9d9"/>
+    <color index="182" displayName="r85g85b85" value="#d9d9d9"/>
+    <color index="183" displayName="r100g85b85" value="#ffd9d9"/>
+    <color index="184" displayName="r0g85b100" value="#00d9ff"/>
+    <color index="185" displayName="r40g85b100" value="#66d9ff"/>
+    <color index="186" displayName="r55g85b100" value="#8cd9ff"/>
+    <color index="187" displayName="r70g85b100" value="#b3d9ff"/>
+    <color index="188" displayName="r85g85b100" value="#d9d9ff"/>
+    <color index="189" displayName="r100g85b100" value="#ffd9ff"/>
+    <color index="190" displayName="yellow" value="#ffff00"/>
+    <color index="191" displayName="green" value="#00ff00"/>
+    <color index="192" displayName="r0g100b0" value="#00ff00"/>
+    <color index="193" displayName="r40g100b0" value="#66ff00"/>
+    <color index="194" displayName="r55g100b0" value="#8cff00"/>
+    <color index="195" displayName="r70g100b0" value="#b3ff00"/>
+    <color index="196" displayName="r85g100b0" value="#d9ff00"/>
+    <color index="197" displayName="r100g100b0" value="#ffff00"/>
+    <color index="198" displayName="r0g100b40" value="#00ff66"/>
+    <color index="199" displayName="r40g100b40" value="#66ff66"/>
+    <color index="200" displayName="r55g100b40" value="#8cff66"/>
+    <color index="201" displayName="r70g100b40" value="#b3ff66"/>
+    <color index="202" displayName="r85g100b40" value="#d9ff66"/>
+    <color index="203" displayName="r100g100b40" value="#ffff66"/>
+    <color index="204" displayName="r0g100b55" value="#00ff8c"/>
+    <color index="205" displayName="r40g100b55" value="#66ff8c"/>
+    <color index="206" displayName="r55g100b55" value="#8cff8c"/>
+    <color index="207" displayName="r70g100b55" value="#b3ff8c"/>
+    <color index="208" displayName="r85g100b55" value="#d9ff8c"/>
+    <color index="209" displayName="r100g100b55" value="#ffff8c"/>
+    <color index="210" displayName="r0g100b70" value="#00ffb3"/>
+    <color index="211" displayName="r40g100b70" value="#66ffb3"/>
+    <color index="212" displayName="r55g100b70" value="#8cffb3"/>
+    <color index="213" displayName="r70g100b70" value="#b3ffb3"/>
+    <color index="214" displayName="r85g100b70" value="#d9ffb3"/>
+    <color index="215" displayName="r100g100b70" value="#ffffb3"/>
+    <color index="216" displayName="r0g100b85" value="#00ffd9"/>
+    <color index="217" displayName="r40g100b85" value="#66ffd9"/>
+    <color index="218" displayName="r55g100b85" value="#8cffd9"/>
+    <color index="219" displayName="r70g100b85" value="#b3ffd9"/>
+    <color index="220" displayName="r85g100b85" value="#d9ffd9"/>
+    <color index="221" displayName="r100g100b85" value="#ffffd9"/>
+    <color index="223" displayName="r40g100b100" value="#66ffff"/>
+    <color index="224" displayName="r55g100b100" value="#8cffff"/>
+    <color index="225" displayName="r70g100b100" value="#b3ffff"/>
+    <color index="226" displayName="r85g100b100" value="#d9ffff"/>
+  </colorPalette>
+  <reportPrivate versionFlags2="0" charPromptMustSplit="0"
+   charPromptMaySplit="0" minFieldResizeRate="0" minFontPoints="0"
+   templateName=""/>
+  <reportWebSettings>
+  <![CDATA[#NULL#]]>
+  </reportWebSettings>
+</report>
