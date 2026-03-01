@@ -1,5 +1,5 @@
-*.fmb filter=lfs diff=lfs merge=lfs -text
-*.pll filter=lfs diff=lfs merge=lfs -text
-*.mmb filter=lfs diff=lfs merge=lfs -text
-*.rdf filter=lfs diff=lfs merge=lfs -text
-*.olb filter=lfs diff=lfs merge=lfs -text
+*.fmb filter=lfs diff=lfs merge=lfs -text lockable
+*.pll filter=lfs diff=lfs merge=lfs -text lockable
+*.mmb filter=lfs diff=lfs merge=lfs -text lockable
+*.rdf filter=lfs diff=lfs merge=lfs -text lockable
+*.olb filter=lfs diff=lfs merge=lfs -text lockable
