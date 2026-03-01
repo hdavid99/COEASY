@@ -1,0 +1,45 @@
+# ==========================================
+# Oracle Forms & Reports Git Exclusion
+# ==========================================
+
+# --- Compiled Binaries (Executable files) ---
+*.fmx
+*.mmx
+*.plx
+*.rep
+
+# --- Temporary / Backup Files ---
+*.err
+*.out
+*.log
+*.bak
+*.~*
+*.TMP
+*.tmp
+
+# --- Oracle Forms Runtime/Design Side-Effects ---
+# (Sometimes generated during generation or conversion)
+core
+*.fmm
+
+# --- IDE Specific Files ---
+# SQL Developer / PL/SQL Developer / TOAD settings
+.oracle_jre_usage
+*.tst
+*.pdr
+*.pdc
+*.ext
+*.workspace
+.project
+.settings/
+
+# --- OS Specific Files ---
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# --- Deployment / Environment Specific ---
+# Exclude actual connection string files or local shell configs
+*.env
+connections.xml
+credentials.txt
