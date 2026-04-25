@@ -1,0 +1,1252 @@
+--------------------------------------------------------
+--  File created - Saturday-April-25-2026   
+--------------------------------------------------------
+--------------------------------------------------------
+--  DDL for Package Body P_CALCULO_RENTABILIDAD_FICI
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE PACKAGE BODY "PROD"."P_CALCULO_RENTABILIDAD_FICI" AS
+
+  /*--------------------------------------------------------------------------------/
+   ::: FUNCION QUE RETORNA SI ES UN FONDO INMOBILIARIO
+   --------------------------------------------------------------------------------*/
+   FUNCTION F_INMOBILIARIO(P_FONDO IN VARCHAR2) RETURN BOOLEAN IS
+
+    CURSOR C_PARFON IS  
+        SELECT PFO_FON_CODIGO 
+        FROM PARAMETROS_FONDOS, PARAMETROS 
+       WHERE PFO_PAR_CODIGO = PAR_CODIGO
+         AND PAR_CODIGO = 101
+         AND PFO_FON_CODIGO = P_FONDO;
+    R_PARFON C_PARFON%ROWTYPE;
+
+    BEGIN
+        OPEN C_PARFON;
+       FETCH C_PARFON INTO R_PARFON;
+          IF C_PARFON%FOUND THEN
+             RETURN TRUE;
+          ELSE
+            RETURN FALSE;
+          END IF;
+       CLOSE C_PARFON;
+    EXCEPTION
+      WHEN OTHERS THEN
+         RETURN FALSE;
+    END;
+
+   /*--------------------------------------------------------------------------------/
+   ::: FUNCION QUE RETORNA EL VR DE LA UNIDAD
+   --------------------------------------------------------------------------------*/
+   FUNCTION F_VALOR_UNIDAD(P_FECHA IN DATE, P_FONDO IN VARCHAR2) RETURN NUMBER IS
+
+      V_VR_FONDO NUMBER(35, 10);
+      NO_PROCESO EXCEPTION;
+
+   BEGIN
+      SELECT DISTINCT VFO_VALOR
+        INTO V_VR_FONDO
+        FROM VALORIZACIONES_FONDO
+       WHERE VFO_FECHA_VALORIZACION >= TRUNC(P_FECHA)
+         AND VFO_FECHA_VALORIZACION < TRUNC(P_FECHA + 1)
+         AND VFO_FON_CODIGO = P_FONDO;
+
+      RETURN(V_VR_FONDO);
+
+   EXCEPTION
+      WHEN NO_DATA_FOUND THEN
+         RETURN 0;
+      WHEN NO_PROCESO THEN
+         RAISE_APPLICATION_ERROR(-20001, 'Error' || SQLERRM);
+
+   END;
+
+   /*--------------------------------------------------------------------------------/
+   ::: FUNCION QUE RETORNA EL VR DE UN FONDO EN  UNA FECHA DETERMINADA
+   --------------------------------------------------------------------------------*/
+   FUNCTION F_VALOR_FONDO(P_FECHA IN DATE, P_FONDO IN VARCHAR2) RETURN NUMBER IS
+
+      V_VR_FONDO NUMBER(35, 10);
+      NO_PROCESO EXCEPTION;
+
+   CURSOR C_VALOR_FONDO(FECHA DATE) IS
+       SELECT (VFO_CAPITAL +VFO_REND_RF+VFO_REND_RV-VFO_RETENCION) VLR_FONDO
+         FROM  VALORIZACIONES_FONDO 
+        WHERE VFO_FON_CODIGO = P_FONDO
+          AND VFO_FECHA_VALORIZACION >= TRUNC(FECHA)
+          AND VFO_FECHA_VALORIZACION < TRUNC(FECHA+1);
+
+   BEGIN
+     OPEN C_VALOR_FONDO(P_FECHA);
+     FETCH C_VALOR_FONDO INTO  V_VR_FONDO;
+     CLOSE C_VALOR_FONDO;   
+
+      RETURN(V_VR_FONDO);
+
+   EXCEPTION
+      WHEN NO_DATA_FOUND THEN
+         RETURN 0;
+      WHEN NO_PROCESO THEN
+         RAISE_APPLICATION_ERROR(-20001, 'Error' || SQLERRM);
+
+   END;
+
+   /*--------------------------------------------------------------------------------/
+   ::: FUNCION QUE RETORNA EL CALCULO DE LA RENTABILIDAD POR DIAS DE UN FONDO
+   --------------------------------------------------------------------------------*/
+   FUNCTION F_RENT_DIAS_V(P_FECHA DATE, P_FONDO VARCHAR2,P_DIAS NUMBER) RETURN NUMBER IS
+
+      V_RENT_DIA   NUMBER;
+      V_FEC_ANT    DATE;
+      V_FECH_INIC  DATE;
+      V_ANTERIOR   NUMBER(35, 15);
+      V_ACTUAL     NUMBER(35, 15);
+      V_NDIAS      NUMBER;
+      V_RESUL_UNID NUMBER(35, 15);
+      V_PROM_DIAS  NUMBER(35, 15);
+      V_EXP        NUMBER;
+      NO_PROCESO EXCEPTION;
+
+   BEGIN
+
+      V_FECH_INIC := P_FECHA;
+      V_FEC_ANT   := TRUNC(P_FECHA - P_DIAS);
+
+      IF FN_VAL_PATRIMONIO_CONTINUO(P_FONDO, V_FEC_ANT, V_FECH_INIC) THEN
+
+         V_NDIAS      := TRUNC(P_FECHA) - TRUNC(V_FEC_ANT);
+         V_ANTERIOR   := TRUNC(F_VALOR_UNIDAD(V_FEC_ANT, P_FONDO),15);
+         V_ACTUAL     := TRUNC(F_VALOR_UNIDAD(V_FECH_INIC, P_FONDO),15);
+         V_RESUL_UNID := TRUNC(NVL((V_ACTUAL / V_ANTERIOR), 0),15);
+         V_PROM_DIAS  := TRUNC((365 / V_NDIAS),15);
+         V_EXP        := (POWER(V_RESUL_UNID, V_PROM_DIAS));
+         IF P_CALCULO_RENTABILIDAD_FICI.F_INMOBILIARIO(P_FONDO) THEN
+            V_RENT_DIA   := ((V_EXP - 1) * 100);
+         ELSE
+            V_RENT_DIA  := ROUND(TRUNC((V_RESUL_UNID - 1) * 100, 8), 8);
+         END IF;
+         RETURN(V_RENT_DIA);
+      ELSE
+         RETURN NULL;
+      END IF;
+
+   EXCEPTION
+      WHEN NO_DATA_FOUND THEN
+         RETURN 0;
+      WHEN ZERO_DIVIDE THEN
+         RETURN 0;
+      WHEN NO_PROCESO THEN
+         RAISE_APPLICATION_ERROR(-20003, 'Error' || SQLERRM);
+      WHEN OTHERS THEN
+         RETURN NULL;
+   END;
+
+   /*--------------------------------------------------------------------------------/
+   ::: FUNCION QUE RETORNA EL CALCULO DE LA RENTABILIDAD A¿O CORRIDO DE UN FONDO
+   --------------------------------------------------------------------------------*/
+   FUNCTION F_RENT_ANO_CORRIDO_V(P_FECHA DATE, P_FONDO VARCHAR2) RETURN NUMBER IS
+      V_RENT_ANO_CORR NUMBER(35, 10);
+
+      V_FEC_ANT    DATE;
+      V_FECH_INIC  DATE;
+      V_ANTERIOR   NUMBER(35, 15);
+      V_ACTUAL     NUMBER(35, 15);
+      V_NDIAS      NUMBER;
+      V_RESUL_UNID NUMBER(35, 15);
+      V_PROM_DIAS  NUMBER(35, 15);
+      V_EXP        NUMBER(35, 15);
+      NO_PROCESO EXCEPTION;
+
+   BEGIN
+
+      V_FECH_INIC := P_FECHA;
+      V_FEC_ANT   := TRUNC(TO_DATE('01' || '/' || '01' || '/' || TO_CHAR(P_FECHA, 'YYYY'), 'DD/MM/YYYY') - 1);
+
+      IF FN_VAL_PATRIMONIO_CONTINUO(P_FONDO, V_FEC_ANT, V_FECH_INIC) THEN
+
+         V_NDIAS         := TRUNC(P_FECHA) - TRUNC(V_FEC_ANT);
+         V_ANTERIOR      := TRUNC(F_VALOR_UNIDAD(V_FEC_ANT, P_FONDO), 15);
+         V_ACTUAL        := TRUNC(F_VALOR_UNIDAD(V_FECH_INIC, P_FONDO), 15);
+         V_RESUL_UNID    := TRUNC(NVL((V_ACTUAL / V_ANTERIOR), 0), 15);
+         V_PROM_DIAS     := TRUNC((365 / V_NDIAS), 15);
+         V_EXP           := TRUNC(POWER(V_RESUL_UNID, V_PROM_DIAS), 15);
+
+
+         IF P_CALCULO_RENTABILIDAD_FICI.F_INMOBILIARIO(P_FONDO) THEN
+            V_RENT_ANO_CORR := ((V_EXP - 1) * 100);
+         ELSE
+             V_RENT_ANO_CORR := ROUND(TRUNC((V_EXP - 1) * 100, 8), 8);
+         END IF;
+
+         RETURN(V_RENT_ANO_CORR);
+      ELSE
+         RETURN NULL;
+      END IF;
+
+   EXCEPTION
+      WHEN NO_DATA_FOUND THEN
+         RETURN 0;
+      WHEN ZERO_DIVIDE THEN
+         RETURN 0;
+      WHEN NO_PROCESO THEN
+         RAISE_APPLICATION_ERROR(-20005, 'Error' || SQLERRM);
+      WHEN OTHERS THEN
+         RETURN NULL;
+   END;
+
+
+   /*--------------------------------------------------------------------------------/
+   ::: FUNCION QUE RETORNA EL CALCULO DE LA RENTABILIDAD DEL ULTIMO MES DE UN FONDO
+   --------------------------------------------------------------------------------*/
+   FUNCTION F_RENT_ULT_MES_V(P_FECHA DATE, P_FONDO VARCHAR2) RETURN NUMBER IS
+
+      V_RENT_MES   NUMBER(35, 15);
+      V_FEC_ANT    DATE;
+      V_FECH_INIC  DATE;
+      V_ANTERIOR   NUMBER(35, 15);
+      V_ACTUAL     NUMBER(35, 15);
+      V_NDIAS      NUMBER;
+      V_RESUL_UNID NUMBER(35, 15);
+      V_PROM_DIAS  NUMBER(35, 15);
+      V_EXP        NUMBER(35, 15);
+      NO_PROCESO EXCEPTION;
+      DIA_OLD NUMBER;
+      DIA_NEW NUMBER;
+
+   BEGIN
+
+      DIA_OLD := TO_CHAR(LAST_DAY(ADD_MONTHS(TO_DATE('01/' || TO_CHAR(P_FECHA, 'MM/YYYY'), 'DD/MM/YYYY'), -1)),
+                         'DD');
+      DIA_NEW := TO_CHAR(P_FECHA, 'DD');
+
+      IF DIA_OLD < DIA_NEW THEN
+         V_FEC_ANT := LAST_DAY(ADD_MONTHS(TO_DATE('01/' || TO_CHAR(P_FECHA, 'MM/YYYY'), 'DD/MM/YYYY'), -1));
+      ELSE
+         V_FEC_ANT := ADD_MONTHS(P_FECHA, -1);
+      END IF;
+
+      V_FECH_INIC := P_FECHA;
+
+      IF FN_VAL_PATRIMONIO_CONTINUO(P_FONDO, V_FEC_ANT, V_FECH_INIC) THEN
+         V_NDIAS      := TRUNC(P_FECHA) - TRUNC(V_FEC_ANT);
+         V_ANTERIOR   := TRUNC(F_VALOR_UNIDAD(V_FEC_ANT, P_FONDO), 15);
+         V_ACTUAL     := TRUNC(F_VALOR_UNIDAD(V_FECH_INIC, P_FONDO), 15);
+         V_RESUL_UNID := TRUNC(NVL((V_ACTUAL / V_ANTERIOR), 0), 15);
+         V_PROM_DIAS  := TRUNC((365 / V_NDIAS), 15);
+         V_EXP        := TRUNC(POWER(V_RESUL_UNID, V_PROM_DIAS), 15);
+
+         --VALIDACION FONDO INMOBILIARIO
+         IF P_CALCULO_RENTABILIDAD_FICI.F_INMOBILIARIO(P_FONDO) THEN
+            V_RENT_MES   := ((V_EXP - 1) * 100);
+         ELSE
+            V_RENT_MES   := ROUND(TRUNC((V_EXP - 1) * 100, 8), 8);
+         END IF;
+
+         RETURN(V_RENT_MES);
+      ELSE
+         RETURN NULL;
+      END IF;
+
+   EXCEPTION
+      WHEN NO_DATA_FOUND THEN
+         RETURN 0;
+      WHEN ZERO_DIVIDE THEN
+         RETURN 0;
+      WHEN NO_PROCESO THEN
+         RAISE_APPLICATION_ERROR(-20002, 'Error' || SQLERRM);
+      WHEN OTHERS THEN
+         RETURN NULL;
+   END;
+
+  /*--------------------------------------------------------------------------------/
+   ::: FUNCION QUE RETORNA EL CALCULO DE LA RENTABILIDAD DE LOS ULTIMOS 3,6,12,24,36 MESES DE UN FONDO
+   --------------------------------------------------------------------------------*/
+   FUNCTION F_RENT_MESES_V(P_FECHA DATE, P_FONDO VARCHAR2, P_MESES NUMBER) RETURN NUMBER IS
+      V_RENT_3MES NUMBER(35, 15);
+
+      V_FEC_ANT    DATE;
+      V_FECH_INIC  DATE;
+      V_ANTERIOR   NUMBER(35, 15);
+      V_ACTUAL     NUMBER(35, 15);
+      V_NDIAS      NUMBER;
+      V_RESUL_UNID NUMBER(35, 15);
+      V_PROM_DIAS  NUMBER(35, 15);
+      V_EXP        NUMBER(35, 15);
+      NO_PROCESO EXCEPTION;
+
+   BEGIN
+
+      V_FECH_INIC := P_FECHA;
+      V_FEC_ANT   := ADD_MONTHS(P_FECHA, -P_MESES);
+
+      IF FN_VAL_PATRIMONIO_CONTINUO(P_FONDO, V_FEC_ANT, V_FECH_INIC) THEN
+
+         V_NDIAS      := TRUNC(P_FECHA) - TRUNC(V_FEC_ANT);
+         V_ANTERIOR   := TRUNC(F_VALOR_UNIDAD(V_FEC_ANT, P_FONDO), 15);
+         V_ACTUAL     := TRUNC(F_VALOR_UNIDAD(V_FECH_INIC, P_FONDO), 15);
+         V_RESUL_UNID := TRUNC(NVL((V_ACTUAL / V_ANTERIOR), 0), 15);
+         V_PROM_DIAS  := TRUNC((365 / V_NDIAS), 15);
+         V_EXP        := TRUNC(POWER(V_RESUL_UNID, V_PROM_DIAS), 15);
+
+           --VALIDACION FONDO INMOBILIARIO
+         IF P_CALCULO_RENTABILIDAD_FICI.F_INMOBILIARIO(P_FONDO) THEN
+            V_RENT_3MES  := ((V_EXP - 1) * 100);
+         ELSE
+             V_RENT_3MES  := ROUND(TRUNC((V_EXP - 1) * 100, 8), 8);
+         END IF;
+
+         RETURN(V_RENT_3MES);
+      ELSE
+         RETURN NULL;
+      END IF;
+
+   EXCEPTION
+      WHEN NO_DATA_FOUND THEN
+         RETURN 0;
+      WHEN ZERO_DIVIDE THEN
+         RETURN 0;
+      WHEN NO_PROCESO THEN
+         RAISE_APPLICATION_ERROR(-20006, 'Error' || SQLERRM);
+      WHEN OTHERS THEN
+         RETURN NULL;
+   END;
+
+   /*----------------------------------------------------------------------------------------------
+   -- FUNCION QUE VERIFICA CONTINUIDAD EN EL VALOR DEL PATRIMONIO PARA UN FONDO,
+   -- CON EL FIN DE NO REPORTAR RENTABILIDAD CUANDO SE TIENEN "HUECOS" EN EL VALOR DE PATRIMONIO
+   -- RETORNA:
+      TRUE  - SI NO SE TIENEN HUECOS EN EL VALOR DEL PATRIMONIO DEL FONDO EN EL RANGO DE FECHAS
+      FALSE - SI SE TIENE AL MENOS UN VALOR DE PATRIMONIO EN CERO DENTRO DEL RANGO DE FECHAS
+   ----------------------------------------------------------------------------------------------*/
+   FUNCTION FN_VAL_PATRIMONIO_CONTINUO(P_FON_CODIGO    IN VALORIZACIONES_FONDO.VFO_FON_CODIGO%TYPE
+                                      ,P_FECHA_INICIAL IN VALORIZACIONES_FONDO.VFO_FECHA_VALORIZACION%TYPE
+                                      ,P_FECHA_FINAL   IN VALORIZACIONES_FONDO.VFO_FECHA_VALORIZACION%TYPE)
+      RETURN BOOLEAN IS
+
+      -- CURSOR PARA VERIFICAR SI UN FONDO PRESENTA CONTINUIDAD EN EL VALOR DE PATRIMONIO EN UN RANGO DE FECHAS
+      CURSOR C_PATRIMONIO_CONTINUO(P_FON_CODIGO    VALORIZACIONES_FONDO.VFO_FON_CODIGO%TYPE
+                                  ,P_FECHA_INICIAL VALORIZACIONES_FONDO.VFO_FECHA_VALORIZACION%TYPE
+                                  ,P_FECHA_FINAL   VALORIZACIONES_FONDO.VFO_FECHA_VALORIZACION%TYPE) IS
+         SELECT COUNT(1)
+           FROM VALORIZACIONES_FONDO V
+          WHERE V.VFO_FON_CODIGO = P_FON_CODIGO
+            AND V.VFO_FECHA_VALORIZACION >= TRUNC(P_FECHA_INICIAL)
+            AND V.VFO_FECHA_VALORIZACION < TRUNC(P_FECHA_FINAL)
+            AND NVL(V.VFO_CAPITAL, 0) + NVL(VFO_REND_RF, 0) + NVL(VFO_REND_RV, 0) - NVL(VFO_RETENCION, 0) = 0;
+      P_CONTADOR NUMBER;
+
+   BEGIN
+      P_CONTADOR := 0;
+      OPEN C_PATRIMONIO_CONTINUO(P_FON_CODIGO, P_FECHA_INICIAL, P_FECHA_FINAL);
+      FETCH C_PATRIMONIO_CONTINUO
+         INTO P_CONTADOR;
+      CLOSE C_PATRIMONIO_CONTINUO;
+
+      IF NVL(P_CONTADOR, 0) = 0 THEN
+         RETURN TRUE;
+      ELSE
+         RETURN FALSE;
+      END IF;
+
+   EXCEPTION
+      WHEN OTHERS THEN
+         RETURN FALSE;
+   END FN_VAL_PATRIMONIO_CONTINUO;
+
+  /*--------------------------------------------------------------------------------/
+   :::  CALCULO DE LA RENTABILIDAD POR VALORACION DE UN RANGO DE FECHAS
+   --------------------------------------------------------------------------------*/   
+   PROCEDURE PR_RENT_FECHAS_V(P_FECHA_INI DATE, P_FECHA_FIN DATE, P_FONDO VARCHAR2) IS
+   --FUNCTION F_RENT_DIAS_V(P_FECHA DATE, P_FONDO VARCHAR2,P_DIAS NUMBER) RETURN NUMBER IS
+
+     NO_PROCESO EXCEPTION;
+     V_RENTABILIDAD NUMBER;
+     V_NDIAS         NUMBER;
+
+   BEGIN
+      DELETE FROM TMP_CALCULADORA_RENTABILIDAD;
+      COMMIT;
+
+      V_NDIAS := TRUNC(P_FECHA_FIN) - TRUNC(P_FECHA_INI);
+      V_RENTABILIDAD := F_RENT_DIAS_V(P_FECHA_FIN, P_FONDO,V_NDIAS);
+
+      INSERT INTO TMP_CALCULADORA_RENTABILIDAD
+      VALUES (P_FONDO,
+            P_FECHA_INI,
+            P_FECHA_FIN,
+            'Valorizacion',
+            F_VALOR_UNIDAD(P_FECHA_INI, P_FONDO ),
+            F_VALOR_UNIDAD(P_FECHA_FIN, P_FONDO ),
+            V_RENTABILIDAD);
+
+
+   EXCEPTION
+      WHEN OTHERS THEN
+         DBMS_OUTPUT.PUT_LINE(SQLCODE||'-'||SQLERRM);
+   END PR_RENT_FECHAS_V;
+   /*--------------------------------------------------------------------------------/
+   :::  CALCULO DE LA RENTABILIDAD TOTAL DE UN RANGO DE FECHAS
+   --------------------------------------------------------------------------------*/   
+   PROCEDURE PR_RENT_FECHAS_T(P_FECHA_INI DATE, P_FECHA_FIN DATE, P_FONDO VARCHAR2) IS
+
+     V_RENTABILIDAD NUMBER;
+     V_NDIAS         NUMBER;
+
+   BEGIN
+
+      V_RENTABILIDAD := FN_CALCULO_TIR_2(P_FECHA_FIN, P_FONDO, P_FECHA_INI);      
+
+
+      INSERT INTO TMP_CALCULADORA_RENTABILIDAD
+      VALUES (P_FONDO,
+            P_FECHA_INI,
+            P_FECHA_FIN,
+            'Total',
+            F_VALOR_UNIDAD(P_FECHA_INI, P_FONDO ),
+            F_VALOR_UNIDAD(P_FECHA_FIN, P_FONDO ),
+            V_RENTABILIDAD);
+
+
+   EXCEPTION
+      WHEN OTHERS THEN
+         DBMS_OUTPUT.PUT_LINE(SQLCODE||'-'||SQLERRM);
+   END PR_RENT_FECHAS_T;
+
+ /*--------------------------------------------------------------------------------/
+   :::  CALCULO DE LA RENTABILIDAD POR RENDIMIENTOS DE UN RANGO DE FECHAS
+   --------------------------------------------------------------------------------*/  
+   PROCEDURE PR_RENT_FECHAS_R(P_FECHA_INI DATE, P_FECHA_FIN DATE, P_FONDO VARCHAR2) IS
+      CURSOR C_DATOS IS
+      SELECT A.TCR_FONDO, 
+             A.TCR_FECHA_INICIAL, 
+             A.TCR_FECHA_FINAL, 
+             B.TCR_RENTABILIDAD RENT_T,
+             A.TCR_RENTABILIDAD RENT_V,
+             ---- Rentabilidad por rendimientos =((1+Rentabilidad total)/(1+Rentabilidad por valorizaci¿n))-1
+             (((1+(B.TCR_RENTABILIDAD/100))/(1+(A.TCR_RENTABILIDAD/100)))-1)*100 RENTABILIDAD
+        FROM (SELECT TCR_FONDO, 
+                     TCR_FECHA_INICIAL, 
+                     TCR_FECHA_FINAL, 
+                     TCR_TIPO_RENTABILIDAD, 
+                     TCR_RENTABILIDAD
+                FROM TMP_CALCULADORA_RENTABILIDAD
+               WHERE TCR_FONDO = P_FONDO
+                 AND TCR_FECHA_INICIAL =  P_FECHA_INI
+                 AND TCR_FECHA_FINAL = P_FECHA_FIN
+                 AND TCR_TIPO_RENTABILIDAD = 'Valorizacion')A,
+             (SELECT TCR_FONDO, 
+                     TCR_FECHA_INICIAL, 
+                     TCR_FECHA_FINAL, 
+                     TCR_TIPO_RENTABILIDAD, 
+                     TCR_RENTABILIDAD
+               FROM  TMP_CALCULADORA_RENTABILIDAD
+              WHERE  TCR_FONDO = P_FONDO
+                AND  TCR_FECHA_INICIAL =  P_FECHA_INI
+                AND  TCR_FECHA_FINAL = P_FECHA_FIN
+                AND  TCR_TIPO_RENTABILIDAD = 'Total')B
+       WHERE B.TCR_FONDO = A.TCR_FONDO
+         AND A.TCR_FECHA_INICIAL =  B.TCR_FECHA_INICIAL
+         AND A.TCR_FECHA_FINAL = B.TCR_FECHA_FINAL;
+     R_DATOS C_DATOS%ROWTYPE;   
+
+
+   BEGIN
+       OPEN C_DATOS;
+      FETCH C_DATOS INTO R_DATOS;
+         IF C_DATOS%FOUND THEN
+            INSERT INTO TMP_CALCULADORA_RENTABILIDAD
+            VALUES(P_FONDO,
+                   P_FECHA_INI,
+                   P_FECHA_FIN,
+                   'Rendimientos',
+                   F_VALOR_UNIDAD(P_FECHA_INI, P_FONDO ),
+                   F_VALOR_UNIDAD(P_FECHA_FIN, P_FONDO ),
+                   R_DATOS.RENTABILIDAD);
+         END IF;
+      CLOSE C_DATOS;
+
+   EXCEPTION WHEN OTHERS THEN 
+      DBMS_OUTPUT.PUT_LINE(SQLCODE||',' ||SQLERRM);
+   END PR_RENT_FECHAS_R;
+/*--------------------------------------------------------------------------------/
+  ::: PROCEDIMIENTO PARA INSERTAR RENTABILIDADES POR VALORACION EN LA TABLA RENTABXVALORAC_FICI
+   --Este es un proceso nocturno que debe correr posterior a la valoracion de los fondos
+ --------------------------------------------------------------------------------*/
+PROCEDURE PR_INSERTA_RXV_FICI(P_FECHA  DATE, P_FONDO VARCHAR2) IS
+
+ CURSOR C_VALOR_FONDO(FECHA DATE) IS
+   SELECT VFO_NUMERO_UNIDADES, 
+          VFO_NUMERO_CUENTAS,
+          VFO_CAPITAL ,
+          VFO_REND_RF,
+          VFO_REND_RV,
+          VFO_RETENCION,
+          VFO_FECHA_OPERACION
+          --(VFO_CAPITAL +VFO_REND_RF+VFO_REND_RV-VFO_RETENCION) VLR_FONDO
+     FROM  VALORIZACIONES_FONDO 
+    WHERE VFO_FON_CODIGO = P_FONDO
+      AND VFO_FECHA_VALORIZACION >= TRUNC(FECHA)
+      AND VFO_FECHA_VALORIZACION < TRUNC(FECHA+1);
+   R_VALOR_FONDO C_VALOR_FONDO%ROWTYPE;   
+
+
+BEGIN
+
+    OPEN C_VALOR_FONDO(P_FECHA);
+   FETCH C_VALOR_FONDO INTO  R_VALOR_FONDO;
+      IF C_VALOR_FONDO%FOUND THEN
+        DELETE FROM RENTABXVALORAC_FICI
+        WHERE RXVF_FECHA_VALORIZACION =  TRUNC(P_FECHA)
+          AND RXVF_FON_CODIGO = P_FONDO
+          AND RXVF_TIPO_RENTABILIDAD =  'Valorizacion';
+
+       INSERT INTO RENTABXVALORAC_FICI(
+               RXVF_FECHA_VALORIZACION,
+               RXVF_FECHA_OPERACION,
+               RXVF_FON_CODIGO,
+               RXVF_VALOR_UNIDAD,
+               RXVF_VALOR_FONDO,
+               RXVF_NUMERO_CUENTAS,
+               RXVF_NUMERO_UNIDADES,
+               RXVF_TIPO_RENTABILIDAD,
+               RXVF_RENTAB_DIARIA,
+               RXVF_RENTAB_SIETE,
+               RXVF_RENTAB_MENS,
+               RXVF_RENTAB_TRIM,
+               RXVF_RENTAB_120,
+               RXVF_RENTABILIDAD_SEMES,
+               RXVF_RENTABILIDAD_ANUAL,
+               RXVF_RENTABIL_2_ANIOS,
+               RXVF_RENTABIL_3_ANIOS,
+               RXVF_RENTABIL_ANIO_CORR,
+               RXVF_CAPITAL,
+               RXVF_REND_RF,
+               RXVF_REND_RV,
+               RXVF_RETENCION)
+       VALUES(
+             TRUNC(P_FECHA),
+             TRUNC(R_VALOR_FONDO.VFO_FECHA_OPERACION),
+             P_FONDO,
+             (P_CALCULO_RENTABILIDAD_FICI.F_VALOR_UNIDAD( P_FECHA,P_FONDO)),--valor unidad
+             P_CALCULO_RENTABILIDAD_FICI.F_VALOR_FONDO( P_FECHA,P_FONDO),--valor fondo
+             R_VALOR_FONDO.VFO_NUMERO_CUENTAS,
+             R_VALOR_FONDO.VFO_NUMERO_UNIDADES,
+             'Valorizacion',
+             (P_CALCULO_RENTABILIDAD_FICI.F_RENT_DIAS_V( P_FECHA,P_FONDO,1)), --Diaria
+             (P_CALCULO_RENTABILIDAD_FICI.F_RENT_DIAS_V( P_FECHA,P_FONDO,7)), --ultimos 7 dias
+             (P_CALCULO_RENTABILIDAD_FICI.F_RENT_ULT_MES_V( P_FECHA,P_FONDO)), --Ultimo Mes
+             (P_CALCULO_RENTABILIDAD_FICI.F_RENT_MESES_V( P_FECHA,P_FONDO,3)),--3 meses
+             (P_CALCULO_RENTABILIDAD_FICI.F_RENT_MESES_V( P_FECHA,P_FONDO,4)),--4 meses
+             (P_CALCULO_RENTABILIDAD_FICI.F_RENT_MESES_V( P_FECHA,P_FONDO,6)),--6 meses
+             (P_CALCULO_RENTABILIDAD_FICI.F_RENT_MESES_V( P_FECHA,P_FONDO,12)),--1 a¿o
+             (P_CALCULO_RENTABILIDAD_FICI.F_RENT_MESES_V( P_FECHA,P_FONDO,24)),--2 a¿os
+             (P_CALCULO_RENTABILIDAD_FICI.F_RENT_MESES_V( P_FECHA,P_FONDO,36)),--3a¿os
+             (P_CALCULO_RENTABILIDAD_FICI.F_RENT_ANO_CORRIDO_V( P_FECHA,P_FONDO)),
+             R_VALOR_FONDO.VFO_CAPITAL ,
+             R_VALOR_FONDO.VFO_REND_RF,
+             R_VALOR_FONDO.VFO_REND_RV,
+             R_VALOR_FONDO.VFO_RETENCION);
+      END IF;
+   CLOSE C_VALOR_FONDO;   
+   COMMIT;
+EXCEPTION WHEN DUP_VAL_ON_INDEX THEN
+    P_SEGUIMIENTO.PR_SEGUIMIENTO('FICI','PR_INSERTA_RXV_FICI '||SQLCODE||'-'||SQLERRM);
+   WHEN OTHERS THEN
+    P_SEGUIMIENTO.PR_SEGUIMIENTO('FICI','PR_INSERTA_RXV_FICI '||SQLCODE||'-'||SQLERRM);
+END PR_INSERTA_RXV_FICI;
+
+/*-----------------------------------------------------------------------------/
+--FN_CALCULO_TIR_2 
+-----------------------------------------------------------------------------*/
+FUNCTION FN_CALCULO_TIR_2(P_FECHA_MAX DATE, P_FONDO VARCHAR2, P_FECHA_MIN DATE) RETURN NUMBER IS
+CURSOR C_DATOS(FECHA_MIN DATE, FECHA_MAX DATE) IS
+       SELECT VFO_FECHA_VALORIZACION,ROUND(VFO_VALOR,9)*-1
+         FROM VALORIZACIONES_FONDO 
+        WHERE VFO_FON_CODIGO = P_FONDO
+          AND VFO_FECHA_VALORIZACION >= TRUNC(FECHA_MIN)
+          AND VFO_FECHA_VALORIZACION < TRUNC(FECHA_MIN)+1
+       UNION
+         SELECT VFO_FECHA_VALORIZACION,ROUND(VFO_VALOR,9)
+         FROM VALORIZACIONES_FONDO 
+        WHERE VFO_FON_CODIGO = P_FONDO
+          AND VFO_FECHA_VALORIZACION >= TRUNC(FECHA_MAX)
+          AND VFO_FECHA_VALORIZACION < TRUNC(FECHA_MAX)+1
+       UNION  
+        SELECT DISTINCT PPRI_FECHA_REGISTRO, ROUND(PPRI_RENDIM_UNIT,9)
+           FROM PROGRAMACION_PAGOS_RENDIM_INMO
+          WHERE PPRI_FON_CODIGO = P_FONDO 
+            AND PPRI_ESTADO = 'APR'
+            AND PPRI_FECHA_REGISTRO >= TRUNC(FECHA_MIN)+1--SE CAMBIAN POR REUNION 07 DE NOV
+            AND PPRI_FECHA_REGISTRO < TRUNC(FECHA_MAX)+1 --SE CAMBIAN POR REUNION 07 DE NOV
+       ORDER BY 2     ;
+   R_DATOS C_DATOS%ROWTYPE;   
+
+
+TYPE T_DATE_ARRAY IS VARRAY (200000) OF DATE;
+TYPE T_AMOUNT_ARRAY IS VARRAY (200000) OF NUMBER;
+
+TIR_NR      NUMBER := 0.1;
+SUMA_VPN    NUMBER ;
+SUMA_D3     NUMBER ;
+P_CTD       NUMBER; --¿Indica la cantidad de valores que tiene cada arreglo
+L_MAXDATE   DATE;
+L_MINDATE   DATE;
+V_NDIAS     NUMBER;
+TEMP NUMBER;
+V_FD        NUMBER;
+V_VPN       NUMBER;
+V_D1        NUMBER;
+V_D2        NUMBER;
+V_D3        NUMBER;
+TMP         NUMBER;
+V_RESUL_UNID NUMBER;
+V_PROM_DIAS  NUMBER;
+V_EXP        NUMBER;
+V_ANTERIOR  NUMBER;
+V_ACTUAL    NUMBER;
+
+P_DATE_ARRAY  T_DATE_ARRAY; --Arreglo donde est¿n almacenadas las fechas
+P_AMOUNT_ARRAY  T_AMOUNT_ARRAY; --Arreglo donde est¿n almacenados los montos
+BEGIN
+     OPEN C_DATOS(P_FECHA_MIN, P_FECHA_MAX);
+     LOOP
+    FETCH C_DATOS BULK COLLECT 
+     INTO P_DATE_ARRAY,P_AMOUNT_ARRAY;
+        L_MAXDATE := P_DATE_ARRAY (1);
+        L_MINDATE := P_DATE_ARRAY (1);
+     EXIT WHEN C_DATOS%NOTFOUND;
+     END LOOP;
+    CLOSE C_DATOS;
+    P_CTD := P_DATE_ARRAY.COUNT;
+    IF P_CTD >= 3 THEN ---tiene pago de rendimientos intermedio 
+       FOR I IN 1 .. P_CTD LOOP -- FOR i IN 1 .. p_date_array.COUNT LOOP -¿si se deja de esta manera es posible que reviente error ORA-06533: Subscript beyond count
+            IF P_DATE_ARRAY (I) > L_MAXDATE THEN
+            L_MAXDATE := P_DATE_ARRAY (I);
+            END IF;
+
+            IF P_DATE_ARRAY (I) < L_MINDATE THEN
+            L_MINDATE := P_DATE_ARRAY (I);
+            END IF;
+
+       END LOOP;
+       SUMA_VPN  := 1;
+       SUMA_D3   := 0;
+       TEMP := P_AMOUNT_ARRAY (1);
+       TIR_NR := 0.01;
+       IF TEMP < 0 THEN --Si el primer valor no es negativo, no calcula la TIR
+          WHILE (trunc(SUMA_VPN,6) * 100000) <> 0 LOOP
+             SUMA_VPN := 0;
+             SUMA_D3 :=0;
+             FOR I IN 1 .. P_CTD LOOP
+                  V_NDIAS := TRUNC(P_DATE_ARRAY (I) -TRUNC(L_MINDATE)   );
+                  V_FD := 1/POWER((1+TIR_NR),(V_NDIAS/365));
+                  V_VPN := V_FD * P_AMOUNT_ARRAY(I);
+
+                  V_D1 := ROUND(-(V_NDIAS /365),16);
+                  V_D2 := ROUND((-V_D1 + 1),14) ;
+                  V_D3 := ROUND(P_AMOUNT_ARRAY(I)*(V_D1/POWER((1+TIR_NR),V_D2)),14);
+                  SUMA_VPN  := SUMA_VPN + V_VPN ;
+                  SUMA_D3   := SUMA_D3 + V_D3 ;
+
+           END LOOP;
+
+           TIR_NR := TIR_NR - SUMA_VPN/SUMA_D3;
+           END LOOP; 
+           RETURN ROUND(TIR_NR*100,9);
+         ELSE
+              RETURN NULL;   
+        END IF;
+
+    ELSE
+        IF P_CALCULO_RENTABILIDAD_FICI.FN_VAL_PATRIMONIO_CONTINUO(P_FONDO, P_FECHA_MAX, P_FECHA_MIN) THEN
+
+             V_NDIAS      := TRUNC(P_FECHA_MAX) - TRUNC(P_FECHA_MIN);
+             V_ANTERIOR   := TRUNC(P_CALCULO_RENTABILIDAD_FICI.F_VALOR_UNIDAD(P_FECHA_MIN, P_FONDO), 15);
+             V_ACTUAL     := TRUNC(P_CALCULO_RENTABILIDAD_FICI.F_VALOR_UNIDAD(P_FECHA_MAX, P_FONDO), 15);
+             V_RESUL_UNID := TRUNC(NVL((V_ACTUAL / V_ANTERIOR), 0), 15);
+             V_PROM_DIAS  := TRUNC((365 / V_NDIAS), 15);
+             V_EXP        := TRUNC(POWER(V_RESUL_UNID, V_PROM_DIAS), 15);
+
+
+             TIR_NR  := TRUNC((V_EXP - 1) * 100, 10);
+             RETURN(TIR_NR);
+        ELSE
+           RETURN 0;
+        END IF;
+        RETURN 0;
+    END IF;
+  EXCEPTION WHEN OTHERS THEN
+  RETURN 0;
+      P_SEGUIMIENTO.PR_SEGUIMIENTO('FICI','FN_CALCULO_TIR_2'||SQLCODE||'-'||SQLERRM);
+  END FN_CALCULO_TIR_2;
+
+  /*--------------------------------------------------------------------------------/
+   ::: FUNCION PARA CALCULAR EL VALOR DE LA TIR PARA UN RANGO DE FECHAS DE VALORACION
+   --------------------------------------------------------------------------------*/
+
+FUNCTION FN_CALCULO_TIR(P_FECHA_MAX DATE, P_FONDO VARCHAR2, P_FECHA_MIN DATE) RETURN NUMBER IS
+
+  CURSOR C_DATOS(FECHA_MIN DATE, FECHA_MAX DATE) IS
+       SELECT VFO_FECHA_VALORIZACION,ROUND(VFO_VALOR,9)*-1
+         FROM VALORIZACIONES_FONDO 
+        WHERE VFO_FON_CODIGO = P_FONDO
+          AND VFO_FECHA_VALORIZACION >= TRUNC(FECHA_MIN)
+          AND VFO_FECHA_VALORIZACION < TRUNC(FECHA_MIN)+1
+       UNION
+         SELECT VFO_FECHA_VALORIZACION,ROUND(VFO_VALOR,9)
+         FROM VALORIZACIONES_FONDO 
+        WHERE VFO_FON_CODIGO = P_FONDO
+          AND VFO_FECHA_VALORIZACION >= TRUNC(FECHA_MAX)
+          AND VFO_FECHA_VALORIZACION < TRUNC(FECHA_MAX)+1
+       UNION  
+        SELECT DISTINCT PPRI_FECHA_REGISTRO, ROUND(PPRI_RENDIM_UNIT,9)
+           FROM PROGRAMACION_PAGOS_RENDIM_INMO
+          WHERE PPRI_FON_CODIGO = P_FONDO 
+            AND PPRI_ESTADO = 'APR'
+            AND PPRI_FECHA_REGISTRO >= TRUNC(FECHA_MIN)+1--SE CAMBIAN POR REUNION 07 DE NOV
+            AND PPRI_FECHA_REGISTRO < TRUNC(FECHA_MAX)+1 --SE CAMBIAN POR REUNION 07 DE NOV
+       ORDER BY 2     ;
+   R_DATOS C_DATOS%ROWTYPE;   
+
+
+TYPE T_DATE_ARRAY IS VARRAY (200000) OF DATE;
+TYPE T_AMOUNT_ARRAY IS VARRAY (200000) OF NUMBER;
+
+STEP_LIMIT  NUMBER := 0;
+TEMP        NUMBER;
+STEP        NUMBER := 0.1;
+D           NUMBER := 0.5;
+Z           NUMBER := 0;
+SROK        NUMBER;
+P_CTD       NUMBER; --¿Indica la cantidad de valores que tiene cada arreglo
+L_MAXDATE   DATE;
+L_MINDATE   DATE;
+V_NDIAS     NUMBER;
+V_ANTERIOR  NUMBER;
+V_ACTUAL    NUMBER;
+V_RESUL_UNID NUMBER;
+V_PROM_DIAS  NUMBER;
+V_EXP        NUMBER;
+
+P_DATE_ARRAY  T_DATE_ARRAY; --Arreglo donde est¿n almacenadas las fechas
+P_AMOUNT_ARRAY  T_AMOUNT_ARRAY; --Arreglo donde est¿n almacenados los montos
+BEGIN
+     OPEN C_DATOS(P_FECHA_MIN, P_FECHA_MAX);
+     LOOP
+    FETCH C_DATOS BULK COLLECT 
+     INTO P_DATE_ARRAY,P_AMOUNT_ARRAY;
+        L_MAXDATE := P_DATE_ARRAY (1);
+        L_MINDATE := P_DATE_ARRAY (1);
+     EXIT WHEN C_DATOS%NOTFOUND;
+     END LOOP;
+    CLOSE C_DATOS;
+    P_CTD := P_DATE_ARRAY.COUNT;
+    IF P_CTD >= 3 THEN ---tiene pago de rendimientos intermedio 
+       FOR I IN 1 .. P_CTD LOOP -- FOR i IN 1 .. p_date_array.COUNT LOOP -¿si se deja de esta manera es posible que reviente error ORA-06533: Subscript beyond count
+            IF P_DATE_ARRAY (I) > L_MAXDATE THEN
+            L_MAXDATE := P_DATE_ARRAY (I);
+            END IF;
+
+            IF P_DATE_ARRAY (I) < L_MINDATE THEN
+            L_MINDATE := P_DATE_ARRAY (I);
+            END IF;
+       END LOOP;
+
+
+        LOOP
+            TEMP := P_AMOUNT_ARRAY (1);
+            --  p_seguimiento.pr_seguimiento('FICI','TEMP '||TEMP);
+            IF TEMP < 0 THEN --Si el primer valor no es negativo, no calcula la TIR
+                FOR I IN 2 .. P_CTD LOOP --FOR i IN 2 .. p_amount_array.COUNT LOOP ¿si se deja de esta manera es posible que reviente error ORA-06533: Subscript beyond count
+                   TEMP := TEMP + P_AMOUNT_ARRAY (I) / POWER ((1 + D), ((P_DATE_ARRAY (I)- P_DATE_ARRAY (1))/365));
+                END LOOP;
+
+                IF (TEMP > 0) AND (Z = 0) THEN
+                STEP := STEP / 2;
+                Z := 1;
+                END IF;
+
+                IF (TEMP < 0) AND (Z = 1) THEN
+                STEP := STEP / 2;
+                Z := 0;
+                END IF;
+
+                IF (Z = 0) THEN
+                D := D - STEP;
+                ELSE
+                D := D + STEP;
+                END IF;
+                STEP_LIMIT := STEP_LIMIT + 1;
+                EXIT WHEN ((ROUND (TEMP * 1000000) = 0) OR (STEP_LIMIT = 10000));
+            ELSE
+              RETURN NULL;
+            END IF;
+        END LOOP;
+     -- p_seguimiento.pr_seguimiento('FICI','return 1 '||ROUND(D*100,9));
+        RETURN (D*100);
+
+    ELSE
+        IF FN_VAL_PATRIMONIO_CONTINUO(P_FONDO, P_FECHA_MAX, P_FECHA_MIN) THEN
+
+             V_NDIAS      := TRUNC(P_FECHA_MAX) - TRUNC(P_FECHA_MIN);
+             V_ANTERIOR   := TRUNC(F_VALOR_UNIDAD(P_FECHA_MIN, P_FONDO), 15);
+             V_ACTUAL     := TRUNC(F_VALOR_UNIDAD(P_FECHA_MAX, P_FONDO), 15);
+             V_RESUL_UNID := TRUNC(NVL((V_ACTUAL / V_ANTERIOR), 0), 15);
+             V_PROM_DIAS  := TRUNC((365 / V_NDIAS), 15);
+             V_EXP        := TRUNC(POWER(V_RESUL_UNID, V_PROM_DIAS), 15);
+
+
+             D  := TRUNC((V_EXP - 1) * 100, 8);
+             --  p_seguimiento.pr_seguimiento('FICI','return 2 '||ROUND(D*100,9));
+             RETURN(D);
+        ELSE
+           RETURN 0;
+        END IF;
+      RETURN 0;
+    END IF;
+
+EXCEPTION
+	WHEN ZERO_DIVIDE THEN
+    P_SEGUIMIENTO.PR_SEGUIMIENTO('FICI','FN_CALCULO_TIR '||SQLCODE||'-'||SQLERRM);
+   WHEN OTHERS THEN
+      P_SEGUIMIENTO.PR_SEGUIMIENTO('FICI','FN_CALCULO_TIR '||SQLCODE||'-'||SQLERRM);
+END FN_CALCULO_TIR;
+
+
+   /*--------------------------------------------------------------------------------/
+   ::: PROCEDIMIENTO PARA CALCULAR E INSERTAR  LA RENTABILIDAD TOTAL 
+   --------------------------------------------------------------------------------*/
+ PROCEDURE PR_INSERTA_RENTAB_TOT_FICI(P_FECHA IN DATE, P_FONDO IN VARCHAR2) IS
+
+  CURSOR C_VALOR_FONDO(FECHA DATE) IS
+   SELECT VFO_NUMERO_UNIDADES, 
+          VFO_NUMERO_CUENTAS,
+          VFO_CAPITAL ,
+          VFO_REND_RF,
+          VFO_REND_RV,
+          VFO_RETENCION,
+          VFO_FECHA_OPERACION
+     FROM  VALORIZACIONES_FONDO 
+    WHERE VFO_FON_CODIGO = P_FONDO
+      AND VFO_FECHA_VALORIZACION >= TRUNC(FECHA)
+      AND VFO_FECHA_VALORIZACION < TRUNC(FECHA+1);
+   R_VALOR_FONDO C_VALOR_FONDO%ROWTYPE;   
+
+ F_7DIA DATE;
+ F_1MES DATE;
+ F_3MES DATE;
+ F_4MES DATE;
+ F_6MES DATE;
+ F_1ANIO DATE;
+ F_2ANIO DATE;
+ F_3ANIO DATE;
+ F_ANIOCORR DATE;
+BEGIN
+   --calculo de fechas---
+  F_7DIA := P_FECHA-7;
+  F_1MES := ADD_MONTHS(TO_DATE(P_FECHA),-1);
+  F_3MES := ADD_MONTHS(TO_DATE(P_FECHA),-3);
+  F_4MES := ADD_MONTHS(TO_DATE(P_FECHA),-4);
+  F_6MES := ADD_MONTHS(TO_DATE(P_FECHA),-6);
+  F_1ANIO := ADD_MONTHS(TO_DATE(P_FECHA),-12);
+  F_2ANIO := ADD_MONTHS(TO_DATE(P_FECHA),-24);
+  F_3ANIO := ADD_MONTHS(TO_DATE(P_FECHA),-36);
+  F_ANIOCORR := TRUNC(TO_DATE('01' || '/' || '01' || '/' || TO_CHAR(P_FECHA, 'YYYY'), 'DD/MM/YYYY') - 1);
+
+    OPEN C_VALOR_FONDO(P_FECHA);
+   FETCH C_VALOR_FONDO INTO  R_VALOR_FONDO;
+      IF C_VALOR_FONDO%FOUND THEN
+        DELETE FROM RENTABXVALORAC_FICI
+        WHERE RXVF_FECHA_VALORIZACION =  TRUNC(P_FECHA)
+          AND RXVF_FON_CODIGO = P_FONDO
+          AND RXVF_TIPO_RENTABILIDAD =  'Total';
+
+        INSERT INTO RENTABXVALORAC_FICI(
+               RXVF_FECHA_VALORIZACION,
+               RXVF_FECHA_OPERACION,
+               RXVF_FON_CODIGO,
+               RXVF_VALOR_UNIDAD,
+               RXVF_VALOR_FONDO,
+               RXVF_NUMERO_CUENTAS,
+               RXVF_NUMERO_UNIDADES,
+               RXVF_TIPO_RENTABILIDAD,
+               RXVF_RENTAB_DIARIA,
+               RXVF_RENTAB_SIETE,
+               RXVF_RENTAB_MENS,
+               RXVF_RENTAB_TRIM,
+               RXVF_RENTAB_120,
+               RXVF_RENTABILIDAD_SEMES,
+               RXVF_RENTABILIDAD_ANUAL,
+               RXVF_RENTABIL_ANIO_CORR,
+               RXVF_RENTABIL_2_ANIOS,
+               RXVF_RENTABIL_3_ANIOS,
+               RXVF_CAPITAL,
+               RXVF_REND_RF,
+               RXVF_REND_RV,
+               RXVF_RETENCION)
+       VALUES(
+             TRUNC(P_FECHA),
+             TRUNC(R_VALOR_FONDO.VFO_FECHA_OPERACION),
+             P_FONDO,
+             (P_CALCULO_RENTABILIDAD_FICI.F_VALOR_UNIDAD( P_FECHA,P_FONDO)),--valor unidad
+             P_CALCULO_RENTABILIDAD_FICI.F_VALOR_FONDO( P_FECHA,P_FONDO),--valor fondo
+             R_VALOR_FONDO.VFO_NUMERO_CUENTAS,
+             R_VALOR_FONDO.VFO_NUMERO_UNIDADES,
+             'Total',
+             NVL((P_CALCULO_RENTABILIDAD_FICI.FN_CALCULO_TIR_2( P_FECHA,P_FONDO,P_FECHA-1)),0), --Diaria
+             NVL((P_CALCULO_RENTABILIDAD_FICI.FN_CALCULO_TIR_2( P_FECHA,P_FONDO,F_7DIA)),0), --7 dias
+             NVL((P_CALCULO_RENTABILIDAD_FICI.FN_CALCULO_TIR_2( P_FECHA,P_FONDO,F_1MES)),0), --ultimo mes
+             NVL((P_CALCULO_RENTABILIDAD_FICI.FN_CALCULO_TIR_2( P_FECHA,P_FONDO,F_3MES)),0), --trimestre
+             NVL((P_CALCULO_RENTABILIDAD_FICI.FN_CALCULO_TIR_2( P_FECHA,P_FONDO,F_4MES)),0), --ultimos 120 dias
+             NVL((P_CALCULO_RENTABILIDAD_FICI.FN_CALCULO_TIR_2( P_FECHA,P_FONDO,F_6MES)),0), --semestre
+             NVL((P_CALCULO_RENTABILIDAD_FICI.FN_CALCULO_TIR_2( P_FECHA,P_FONDO,F_1ANIO)),0), --ultimo a¿o
+             NVL((P_CALCULO_RENTABILIDAD_FICI.FN_CALCULO_TIR_2( P_FECHA,P_FONDO,F_ANIOCORR)),0), --a¿o corrido
+             NVL((P_CALCULO_RENTABILIDAD_FICI.FN_CALCULO_TIR_2( P_FECHA,P_FONDO,F_2ANIO)),0), --ultimos 2 a¿os
+             NVL((P_CALCULO_RENTABILIDAD_FICI.FN_CALCULO_TIR_2( P_FECHA,P_FONDO,F_3ANIO)),0), --ultimos 3 a¿os
+             R_VALOR_FONDO.VFO_CAPITAL ,
+             R_VALOR_FONDO.VFO_REND_RF,
+             R_VALOR_FONDO.VFO_REND_RV,
+             R_VALOR_FONDO.VFO_RETENCION);
+      END IF;
+   CLOSE C_VALOR_FONDO;   
+   COMMIT;
+EXCEPTION WHEN DUP_VAL_ON_INDEX THEN
+    P_SEGUIMIENTO.PR_SEGUIMIENTO('FICI','PR_INSERTA_RENTAB_TOT_FICI '||SQLCODE||'-'||SQLERRM);
+   WHEN OTHERS THEN
+      P_SEGUIMIENTO.PR_SEGUIMIENTO('FICI','PR_INSERTA_RENTAB_TOT_FICI '||SQLCODE||'-'||SQLERRM);
+END PR_INSERTA_RENTAB_TOT_FICI;
+
+/*--------------------------------------------------------------------------------/
+   ::: PROCEDIMIENTO PARA CALCULAR E INSERTAR  LA RENTABILIDAD POR RENDIMIENTOS 
+ --------------------------------------------------------------------------------*/
+PROCEDURE PR_INSERTA_RXR_FICI(P_FECHA  IN DATE,P_FONDO IN VARCHAR2) IS
+--LLENADO RENTABILIDADES POR VALORACION FICI
+V_FONDO VARCHAR2(15);
+V_FECHA_INICIAL DATE;
+V_FECHA_FINAL DATE;
+V_VALOR_FONDO NUMBER;
+
+CURSOR C_DATOS( FONDO VARCHAR2,FECHA DATE) IS
+   SELECT ROUND((((1+A.RXVF_RENTAB_DIARIA)/(1+B.RXVF_RENTAB_DIARIA))-1),8)*100 RXREND_DIARIA,
+           ROUND((((1+A.RXVF_RENTAB_SIETE)/(1+B.RXVF_RENTAB_SIETE))-1),8)*100 RXREND_SIETE,
+           ROUND((((1+A.RXVF_RENTAB_MENS)/(1+B.RXVF_RENTAB_MENS))-1),8)*100 RXREND_MENS,
+           ROUND((((1+A.RXVF_RENTAB_TRIM)/(1+B.RXVF_RENTAB_TRIM))-1),8)*100 RXREND_TRIM,
+           ROUND((((1+A.RXVF_RENTAB_120)/(1+B.RXVF_RENTAB_120))-1),8)*100 RXREND_120,
+           ROUND((((1+A.RXVF_RENTABILIDAD_SEMES)/(1+B.RXVF_RENTABILIDAD_SEMES))-1),8)*100 RXREND_SEMES,
+           ROUND((((1+A.RXVF_RENTABILIDAD_ANUAL)/(1+B.RXVF_RENTABILIDAD_ANUAL))-1),8)*100 RXREND_ANUAL,
+           ROUND((((1+A.RXVF_RENTABIL_ANIO_CORR)/(1+B.RXVF_RENTABIL_ANIO_CORR))-1),8)*100 RXREND_ANIO_CORR,
+           ROUND((((1+A.RXVF_RENTABIL_2_ANIOS)/(1+B.RXVF_RENTABIL_2_ANIOS))-1),8)*100 RXREND_2_ANIOS,
+           ROUND((((1+A.RXVF_RENTABIL_3_ANIOS)/(1+B.RXVF_RENTABIL_3_ANIOS))-1),8)*100 RXREND_3_ANIOS,
+          B.RXVF_FECHA_OPERACION RXVF_FECHA_OPERACION, 
+          B.RXVF_CAPITAL RXVF_CAPITAL, 
+          B.RXVF_REND_RF RXVF_REND_RF,
+          B.RXVF_REND_RV RXVF_REND_RV,
+          B.RXVF_RETENCION RXVF_RETENCION,
+          B.RXVF_VALOR_UNIDAD RXVF_VALOR_UNIDAD, 
+          B.RXVF_VALOR_FONDO RXVF_VALOR_FONDO,
+          B.RXVF_NUMERO_CUENTAS RXVF_NUMERO_CUENTAS,
+          B.RXVF_NUMERO_UNIDADES RXVF_NUMERO_UNIDADES,
+          B.RXVF_FON_CODIGO
+    FROM (SELECT RXVF_FECHA_OPERACION,
+          RXVF_FON_CODIGO,
+          ROUND(RXVF_RENTAB_DIARIA,8)/100 RXVF_RENTAB_DIARIA, 
+          ROUND(RXVF_RENTAB_SIETE,8)/100 RXVF_RENTAB_SIETE, 
+          ROUND(RXVF_RENTAB_MENS,8)/100 RXVF_RENTAB_MENS, 
+          ROUND(RXVF_RENTAB_TRIM,8)/100 RXVF_RENTAB_TRIM, 
+          ROUND(RXVF_RENTAB_120,8)/100 RXVF_RENTAB_120, 
+          ROUND(RXVF_RENTABILIDAD_SEMES,8)/100 RXVF_RENTABILIDAD_SEMES, 
+          ROUND(RXVF_RENTABILIDAD_ANUAL,8)/100 RXVF_RENTABILIDAD_ANUAL, 
+          ROUND(RXVF_RENTABIL_ANIO_CORR,8)/100 RXVF_RENTABIL_ANIO_CORR, 
+          ROUND(RXVF_RENTABIL_2_ANIOS,8)/100 RXVF_RENTABIL_2_ANIOS, 
+          ROUND(RXVF_RENTABIL_3_ANIOS,8)/100 RXVF_RENTABIL_3_ANIOS
+     FROM RENTABXVALORAC_FICI 
+    WHERE RXVF_FON_CODIGO = FONDO
+      AND RXVF_FECHA_OPERACION >= FECHA
+      AND RXVF_FECHA_OPERACION <  FECHA+1
+      AND RXVF_TIPO_RENTABILIDAD = 'Total')A,
+      (SELECT RXVF_FECHA_OPERACION,
+          RXVF_FON_CODIGO,
+          ROUND(RXVF_RENTAB_DIARIA,8)/100 RXVF_RENTAB_DIARIA, 
+          ROUND(RXVF_RENTAB_SIETE,8)/100 RXVF_RENTAB_SIETE, 
+          ROUND(RXVF_RENTAB_MENS,8)/100 RXVF_RENTAB_MENS, 
+          ROUND(RXVF_RENTAB_TRIM,8)/100 RXVF_RENTAB_TRIM, 
+          ROUND(RXVF_RENTAB_120,8)/100 RXVF_RENTAB_120, 
+          ROUND(RXVF_RENTABILIDAD_SEMES,8)/100 RXVF_RENTABILIDAD_SEMES, 
+          ROUND(RXVF_RENTABILIDAD_ANUAL,8)/100 RXVF_RENTABILIDAD_ANUAL, 
+          ROUND(RXVF_RENTABIL_ANIO_CORR,8)/100 RXVF_RENTABIL_ANIO_CORR, 
+          ROUND(RXVF_RENTABIL_2_ANIOS,8)/100 RXVF_RENTABIL_2_ANIOS, 
+          ROUND(RXVF_RENTABIL_3_ANIOS,8)/100 RXVF_RENTABIL_3_ANIOS,
+          RXVF_VALOR_UNIDAD,
+          RXVF_VALOR_FONDO,
+          RXVF_NUMERO_CUENTAS,
+          RXVF_NUMERO_UNIDADES,
+          RXVF_CAPITAL,
+          RXVF_REND_RF,
+          RXVF_REND_RV,
+          RXVF_RETENCION
+     FROM RENTABXVALORAC_FICI 
+    WHERE RXVF_FON_CODIGO = FONDO
+      AND RXVF_FECHA_OPERACION >=  FECHA
+      AND RXVF_FECHA_OPERACION <  FECHA+1
+      AND RXVF_TIPO_RENTABILIDAD = 'Valorizacion')B
+    WHERE B.RXVF_FON_CODIGO = A.RXVF_FON_CODIGO
+      AND B.RXVF_FECHA_OPERACION = A.RXVF_FECHA_OPERACION
+         ;
+
+
+   R_DATOS C_DATOS%ROWTYPE;   
+ ---- Rentabilidad por rendimientos =((1+Rentabilidad total)/(1+Rentabilidad por valorizaci¿n))-1
+BEGIN
+    OPEN C_DATOS(P_FONDO,P_FECHA);
+   FETCH C_DATOS INTO  R_DATOS;
+   WHILE C_DATOS%FOUND LOOP
+        DELETE FROM RENTABXVALORAC_FICI
+        WHERE RXVF_FECHA_VALORIZACION =  TRUNC(P_FECHA)
+          AND RXVF_FON_CODIGO = P_FONDO
+          AND RXVF_TIPO_RENTABILIDAD =  'Rendimientos';
+       ---***llama procedimiento que inserta
+       INSERT INTO RENTABXVALORAC_FICI(
+          RXVF_FECHA_VALORIZACION,
+          RXVF_FECHA_OPERACION,
+          RXVF_FON_CODIGO,
+          RXVF_VALOR_UNIDAD,
+          RXVF_VALOR_FONDO,
+          RXVF_NUMERO_CUENTAS,
+          RXVF_NUMERO_UNIDADES,
+          RXVF_TIPO_RENTABILIDAD,
+          RXVF_RENTAB_DIARIA,
+          RXVF_RENTAB_SIETE,
+          RXVF_RENTAB_MENS,
+          RXVF_RENTAB_TRIM,
+          RXVF_RENTAB_120,
+          RXVF_RENTABILIDAD_SEMES,
+          RXVF_RENTABILIDAD_ANUAL,
+          RXVF_RENTABIL_ANIO_CORR,
+          RXVF_RENTABIL_2_ANIOS,
+          RXVF_RENTABIL_3_ANIOS,
+          RXVF_CAPITAL,
+          RXVF_REND_RF,
+          RXVF_REND_RV,
+          RXVF_RETENCION)
+      VALUES(
+          TRUNC(R_DATOS.RXVF_FECHA_OPERACION),
+          TRUNC(R_DATOS.RXVF_FECHA_OPERACION),
+          R_DATOS.RXVF_FON_CODIGO,
+          R_DATOS.RXVF_VALOR_UNIDAD,
+          R_DATOS.RXVF_VALOR_FONDO,
+          R_DATOS.RXVF_NUMERO_CUENTAS,
+          R_DATOS.RXVF_NUMERO_UNIDADES,
+          'Rendimientos',
+          R_DATOS.RXREND_DIARIA, --Diaria
+          R_DATOS.RXREND_SIETE, --7 dias
+          R_DATOS.RXREND_MENS,--ultimo mes
+          R_DATOS.RXREND_TRIM, --trimestre
+          R_DATOS.RXREND_120,--ultimos 120 dias
+          R_DATOS.RXREND_SEMES, --semestre
+          R_DATOS.RXREND_ANUAL, --ultimo a¿o
+          R_DATOS.RXREND_ANIO_CORR, --a¿o corrido
+          R_DATOS.RXREND_2_ANIOS, --ultimos 2 a¿os
+          R_DATOS.RXREND_3_ANIOS, --ultimos 3 a¿os
+          R_DATOS.RXVF_CAPITAL,
+          R_DATOS.RXVF_REND_RF,
+          R_DATOS.RXVF_REND_RV,
+          R_DATOS.RXVF_RETENCION);
+      FETCH C_DATOS INTO  R_DATOS;
+      END LOOP;
+      CLOSE C_DATOS;   
+   COMMIT;
+EXCEPTION WHEN DUP_VAL_ON_INDEX THEN
+    P_SEGUIMIENTO.PR_SEGUIMIENTO('FICI','PR_INSERTA_RXR_FICI '||SQLCODE||'-'||SQLERRM);
+   WHEN OTHERS THEN
+    P_SEGUIMIENTO.PR_SEGUIMIENTO('FICI','PR_INSERTA_RXR_FICI '||SQLCODE||'-'||SQLERRM);
+END PR_INSERTA_RXR_FICI;
+
+-- -----------------------------------------------------------------------------
+-- PROCEDIMIENTO PARA EJECUTAR POR PROCESO NOCTURNO DESPUES DE VALORACION
+-- -----------------------------------------------------------------------------
+PROCEDURE PR_CALCULO_DIARIO(P_TX IN NUMBER DEFAULT NULL) IS
+V_FECHA DATE;
+V_FONDO VARCHAR2(15); 
+V_VALORACION VARCHAR2(1);
+N_ID_PROCESO NUMBER;
+N_TX NUMBER;
+BEGIN
+  --se asigna el consecutivo del proceso(tabla PARAMETRIZACION_PROCESOS)
+  N_ID_PROCESO := P_TRAZA_CORE.FN_ID_PROCESO('P_CALCULO_RENTABILIDAD_FICI.PR_CALCULO_DIARIO');
+
+  --se Asigna consecutivo para la transaccion, si el proceso es el primero que se llama, reinicia el consecutivo
+  N_TX := P_TRAZA_CORE.FN_TRAE_TX(P_TX);
+    --Registra Traza
+  P_TRAZA_CORE.PR_REGISTRAR_TRAZA(N_ID_PROCESO,
+                                'I',
+                                'Inicio proceso P_CALCULO_RENTABILIDAD_FICI.PR_CALCULO_DIARIO. Fecha Proceso: ' ||
+                                TO_CHAR(SYSDATE, 'DD-MM-YYYY HH24:mi:ss'),
+                                N_TX);
+
+   V_FECHA := TRUNC(SYSDATE-1);
+   V_FONDO := '900908192';
+
+    P_TRAZA_CORE.PR_REGISTRAR_TRAZA(N_ID_PROCESO,
+                                'T',
+                                'Traza proceso P_CALCULO_RENTABILIDAD_FICI.PR_CALCULO_DIARIO llama PR_INSERTA_RXV_FICI-->V_FECHA:'||V_FECHA||' Fecha Proceso: ' ||
+                                TO_CHAR(SYSDATE, 'DD-MM-YYYY HH24:mi:ss'),
+                                N_TX);                                
+  -- P_SEGUIMIENTO.PR_SEGUIMIENTO('FICI','LLAMA RXV '||V_FECHA);
+   PR_INSERTA_RXV_FICI(V_FECHA,V_FONDO) ;
+   P_TRAZA_CORE.PR_REGISTRAR_TRAZA(N_ID_PROCESO,
+                                'T',
+                                'Traza proceso P_CALCULO_RENTABILIDAD_FICI.PR_CALCULO_DIARIO llama PR_INSERTA_RENTAB_TOT_FICI-->V_FECHA:'||V_FECHA||' Fecha Proceso: ' ||
+                                TO_CHAR(SYSDATE, 'DD-MM-YYYY HH24:mi:ss'),
+                                N_TX);  
+  -- P_SEGUIMIENTO.PR_SEGUIMIENTO('FICI','LLAMA RTOTAL '||V_FECHA);
+   PR_INSERTA_RENTAB_TOT_FICI(V_FECHA,V_FONDO);
+    P_TRAZA_CORE.PR_REGISTRAR_TRAZA(N_ID_PROCESO,
+                                'T',
+                                'Traza proceso P_CALCULO_RENTABILIDAD_FICI.PR_CALCULO_DIARIO llama PR_INSERTA_RXR_FICI-->V_FECHA:'||V_FECHA||' Fecha Proceso: ' ||
+                                TO_CHAR(SYSDATE, 'DD-MM-YYYY HH24:mi:ss'),
+                                N_TX);  
+  -- P_SEGUIMIENTO.PR_SEGUIMIENTO('FICI','LLAMA RXR '||V_FECHA);
+   PR_INSERTA_RXR_FICI(V_FECHA,V_FONDO) ;
+
+   P_TRAZA_CORE.PR_REGISTRAR_TRAZA(N_ID_PROCESO,
+                                'F',
+                                'FIN proceso P_CALCULO_RENTABILIDAD_FICI.PR_CALCULO_DIARIO. Fecha Proceso: ' ||
+                                TO_CHAR(SYSDATE, 'DD-MM-YYYY HH24:mi:ss'),
+                                N_TX);
+
+   EXCEPTION WHEN OTHERS THEN
+     --P_SEGUIMIENTO.PR_SEGUIMIENTO('RENTAB_FICI','ERROR '||SQLCODE||'-'||SQLERRM);
+     P_TRAZA_CORE.PR_REGISTRAR_TRAZA(N_ID_PROCESO,
+                                'E',
+                                'ERROR proceso P_CALCULO_RENTABILIDAD_FICI.PR_CALCULO_DIARIO. Fecha Proceso: ' ||
+                                TO_CHAR(SYSDATE, 'DD-MM-YYYY HH24:mi:ss')||SQLERRM,
+                                N_TX);
+
+END PR_CALCULO_DIARIO;
+
+-- -----------------------------------------------------------------------------
+-- PR_REP_PORTAFOLIO_EXCEL--> reporte para generar desde la forma esrtfo
+-- -----------------------------------------------------------------------------
+PROCEDURE PR_REP_PORTAFOLIO_EXCEL ( P_FECHA_INICIAL  DATE,
+                                    P_FECHA_FINAL    DATE,
+                                    P_FONDO          VARCHAR2,
+                                    P_CONS           VARCHAR2,
+                                    P_RUTA           OUT VARCHAR2,
+                                    P_TIPO_R         VARCHAR2) AS
+
+
+
+  P_CODIGO       VARCHAR2(200);
+  P_RESPUESTA    VARCHAR2(200);
+  NOMBRE_ARCHIVO VARCHAR2(1000);
+  V_RUTA         VARCHAR2(1000);
+  NO_REPORTE     EXCEPTION;
+
+  V_FECHA_INI    DATE;
+  V_FECHA_FIN    DATE;
+  V_FONDO        VARCHAR2(15);
+  V_RESPUESTA    VARCHAR2(2000);
+  P_VALOR        NUMBER;
+  P_VALOR_DATE   DATE;
+  P_VALOR_CHAR   VARCHAR2(200);
+  V_CONSULTA     VARCHAR2(2000);
+
+
+BEGIN
+
+  V_CONSULTA := 'SELECT RXVF_FECHA_VALORIZACION,
+                        RXVF_FON_CODIGO,
+                        RXVF_FECHA_OPERACION,
+                        RXVF_NUMERO_CUENTAS,
+                        RXVF_NUMERO_UNIDADES,
+                        RXVF_VALOR_UNIDAD,
+                        RXVF_VALOR_FONDO,
+                        RXVF_TIPO_RENTABILIDAD,
+                        RXVF_RENTAB_DIARIA,
+                        RXVF_RENTAB_SIETE,
+                        RXVF_RENTAB_MENS,
+                        RXVF_RENTAB_TRIM,
+                        RXVF_RENTAB_120,
+                        RXVF_RENTABILIDAD_SEMES,
+                        RXVF_RENTABILIDAD_ANUAL,
+                        RXVF_RENTABIL_ANIO_CORR,
+                        RXVF_RENTABIL_2_ANIOS,
+                        RXVF_RENTABIL_3_ANIOS,
+                        RXVF_CAPITAL,
+                        RXVF_REND_RF,
+                        RXVF_REND_RV,
+                        RXVF_RETENCION
+                 FROM RENTABXVALORAC_FICI
+                WHERE TRUNC(RXVF_FECHA_VALORIZACION) BETWEEN 
+                      '''||P_FECHA_INICIAL||''' AND '''||P_FECHA_FINAL||'''
+                  AND RXVF_TIPO_RENTABILIDAD = DECODE('''||P_TIPO_R||''',''TODOS'',RXVF_TIPO_RENTABILIDAD, '''||P_TIPO_R||''')
+                  AND RXVF_FON_CODIGO = DECODE('''||P_FONDO||''',''%'',RXVF_FON_CODIGO,'''||P_FONDO||''')
+                ORDER BY  RXVF_FECHA_VALORIZACION, DECODE(RXVF_TIPO_RENTABILIDAD,''Rendimientos'',2,''Total'',3,''Valorizacion'',1) ASC'     ;
+
+  P_TOOLS.CONSULTARCONSTANTE( P_CONSTANTE  => P_CONS,
+                               P_VALOR      => P_VALOR,
+                               P_VALOR_DATE => P_VALOR_DATE,
+                               P_VALOR_CHAR => P_VALOR_CHAR
+                             );
+
+  V_RUTA :=  P_VALOR_CHAR;
+
+  NOMBRE_ARCHIVO := 'RentabilidadTotalInmobiliario_'||TO_CHAR(P_FECHA_INICIAL,'YYYYMMDD');
+
+
+  --LLAMADO AL PROGRAMA QUE CREA EL XSLX
+  P_REPORTES.PR_GENERAR_XLSX_API(P_RUTA          => V_RUTA,
+                                P_NOMBRE_ARCHIVO => NOMBRE_ARCHIVO, --'Archivo de Saldos',
+                                P_QUERY          => V_CONSULTA,
+                                P_CODIGO         => P_CODIGO,
+                                P_RESPUESTA      => P_RESPUESTA);
+
+  IF P_CODIGO = '0000' THEN
+    P_SEGUIMIENTO.PR_SEGUIMIENTO('PORTINM','Se ha generado el Reporte Rentabilidad Total FICI, en la ruta ' || V_RUTA);
+    P_RUTA := V_RUTA||NOMBRE_ARCHIVO;
+  ELSE
+    RAISE NO_REPORTE;
+  END IF;
+  V_RESPUESTA := P_RESPUESTA;
+
+EXCEPTION
+  WHEN NO_REPORTE THEN
+   P_SEGUIMIENTO.PR_SEGUIMIENTO('PORTINM','No se genero reporte, falla en el llamado al servicio, comuniquese con soporte. '||SQLCODE||P_RESPUESTA);
+     RAISE_APPLICATION_ERROR(-20059, 'No se genero reporte, falla en el llamado al servicio, comuniquese con soporte. '||SQLCODE||P_RESPUESTA);
+
+  WHEN OTHERS THEN
+     P_SEGUIMIENTO.PR_SEGUIMIENTO('PORTINM','ERROR PORT_EXC: '||SQLCODE||' '||SQLERRM );
+     RAISE_APPLICATION_ERROR(-20002,'Fallo la generacion del Reporte Rentabilidad Total FICI en excel . - '||V_RESPUESTA||'-'||SQLERRM||'-'||SQLCODE);
+
+END PR_REP_PORTAFOLIO_EXCEL;
+
+END P_CALCULO_RENTABILIDAD_FICI;
+
+/
+
+  GRANT EXECUTE ON "PROD"."P_CALCULO_RENTABILIDAD_FICI" TO "M_CORREDORES_CONSULTA";
+  GRANT EXECUTE ON "PROD"."P_CALCULO_RENTABILIDAD_FICI" TO "M_SARLAFT_ANALISTA_FATCA";
+  GRANT EXECUTE ON "PROD"."P_CALCULO_RENTABILIDAD_FICI" TO "M_PROFESIONAL_II_TRADING";
+  GRANT EXECUTE ON "PROD"."P_CALCULO_RENTABILIDAD_FICI" TO "M_J_OP_AUX_COMPEN_CUA_CIE_TESO";
+  GRANT EXECUTE ON "PROD"."P_CALCULO_RENTABILIDAD_FICI" TO "M_J_OP_AUX_LL_INVERS_OTROS";
+  GRANT EXECUTE ON "PROD"."P_CALCULO_RENTABILIDAD_FICI" TO "M_GERENCIA_PORTA_TERCE_GERENTE";
+  GRANT EXECUTE ON "PROD"."P_CALCULO_RENTABILIDAD_FICI" TO "M_GERENCIA_PORTA_TERCE_TRADER";
+  GRANT EXECUTE ON "PROD"."P_CALCULO_RENTABILIDAD_FICI" TO "M_GERENCIA_PORT_TER_ANALIS_INV";
+  GRANT EXECUTE ON "PROD"."P_CALCULO_RENTABILIDAD_FICI" TO "M_COORDINACION_VINCULACION";
+  GRANT EXECUTE ON "PROD"."P_CALCULO_RENTABILIDAD_FICI" TO "M_CONTROL_FINANCIERO_ANALISTA";
+  GRANT EXECUTE ON "PROD"."P_CALCULO_RENTABILIDAD_FICI" TO "M_J_OP_ANALIS_INVER_FICS";
+  GRANT EXECUTE ON "PROD"."P_CALCULO_RENTABILIDAD_FICI" TO "M_J_OP_COORD_INVER_FICS";
+  GRANT EXECUTE ON "PROD"."P_CALCULO_RENTABILIDAD_FICI" TO "M_GERENCIA_CONTABILID_ANISTA";
+  GRANT EXECUTE ON "PROD"."P_CALCULO_RENTABILIDAD_FICI" TO "M_GERENCIA_FONDOS_AUX_ADM_COLE";
+  GRANT EXECUTE ON "PROD"."P_CALCULO_RENTABILIDAD_FICI" TO "M_GEREN_CONT_COORD_APT_CCY_FCP";
+  GRANT EXECUTE ON "PROD"."P_CALCULO_RENTABILIDAD_FICI" TO "M_GERENCI_CONTA_ANALIS_TRANSMI";
+  GRANT EXECUTE ON "PROD"."P_CALCULO_RENTABILIDAD_FICI" TO "M_GERENCIA_FONDOS_GEREN_REN_FI";
+  GRANT EXECUTE ON "PROD"."P_CALCULO_RENTABILIDAD_FICI" TO "M_GERENCIA_FONDOS_TRADER_JR_RF";
+  GRANT EXECUTE ON "PROD"."P_CALCULO_RENTABILIDAD_FICI" TO "M_GERENCIA_FONDOS_COOR_SER_COL";
+  GRANT EXECUTE ON "PROD"."P_CALCULO_RENTABILIDAD_FICI" TO "M_GERENCIA_FONDOS_COOR_ADM_FIC";
+  GRANT EXECUTE ON "PROD"."P_CALCULO_RENTABILIDAD_FICI" TO "M_J_OP_COMPLEMENTADOR_CUMPLI";
+  GRANT EXECUTE ON "PROD"."P_CALCULO_RENTABILIDAD_FICI" TO "M_J_OP_AUX_CUMPLI_ADMON_VAL";
+  GRANT EXECUTE ON "PROD"."P_CALCULO_RENTABILIDAD_FICI" TO "M_J_OP_AUX_CUMPLIMIENTO_OTROS";
+  GRANT EXECUTE ON "PROD"."P_CALCULO_RENTABILIDAD_FICI" TO "M_GERENCIA_TESORERIA_GERENTE";
+  GRANT EXECUTE ON "PROD"."P_CALCULO_RENTABILIDAD_FICI" TO "M_J_OP_VAL_CTRL";
+  GRANT EXECUTE ON "PROD"."P_CALCULO_RENTABILIDAD_FICI" TO "M_GERENCIA_TRADER";
+  GRANT EXECUTE ON "PROD"."P_CALCULO_RENTABILIDAD_FICI" TO "M_GERENCIA_TESORERIA_JEFE";
