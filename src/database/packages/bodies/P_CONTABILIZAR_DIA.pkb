@@ -1,0 +1,911 @@
+--------------------------------------------------------
+--  File created - Sunday-April-26-2026   
+--------------------------------------------------------
+--------------------------------------------------------
+--  DDL for Package Body P_CONTABILIZAR_DIA
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE PACKAGE BODY "PROD"."P_CONTABILIZAR_DIA" IS
+-- 
+-- 
+PROCEDURE P_CONTAB_DIA IS 
+  P_FECHA             DATE;
+  PROCESO             NUMBER;
+  P_NUM_INI NUMBER;
+  P_NUM_FIN NUMBER; 
+BEGIN
+  P_NUM_INI := P_TOOLS.FN_REGISTRA_PROCESO_NOCTURNO('P_CONTABILIZAR_DIA.P_CONTAB_DIA','INI');
+  DELETE FROM INTERFAZ_CONTABLE;
+  SELECT TRUNC(SYSDATE)-1 INTO P_FECHA FROM DUAL;
+  P_CONTAB_BANCOS(P_FECHA);
+  P_CONTAB_BANCOS_EXTERIOR(P_FECHA);
+  P_CONTAB_DIVISAS(P_FECHA);
+  P_CONTAB_TERCEROS(P_FECHA);
+  P_CONTAB_CLIENTES(P_FECHA);
+  P_CONTAB_APTS(P_FECHA);
+  P_CONTAB_FACTURAS(P_FECHA);
+
+  P_CONTAB_APORTES_FONDOS(P_FECHA);
+  P_CONTAB_INVERSIONES_FONDOS(P_FECHA);
+  P_CONTAB_POSPROPIA(P_FECHA,27,'%');
+  P_CONTAB_POSPROPIA(P_FECHA,19,'%');
+  P_CONTAB_ADMON_VALORES (P_FECHA);
+  P_CONTAB_INMOBILIARIO(P_FECHA);
+  P_CONTAB_ING_EGR(P_FECHA);
+  P_CONTAB_DERIVADOS_FONDOS(P_FECHA);
+  P_CONTAB_COMPROM_FUT (P_FECHA);
+  P_CONTAB_FONDOS_RV(P_FECHA,'CFP');
+
+  -- MES: PROYECTO DIVISAS FONDOS
+  P_CONTAB_CBAN_EXTFON (P_FECHA);
+  P_CONTAB_DIVISAS_FON (P_FECHA);
+  -- FIN MES
+
+  -- VAGTUD881 - INVERSIONES INTERNACIONALES FICS
+  P_CONTAB_INVINT_FON (P_FECHA);
+
+  -- VAGTUD975-3 INVERSIONES EN CREDITOS - FCP DEUDA
+  P_CONTAB_CREDITOS_FON(P_FECHA);
+
+  P_MAIL.ENVIO_MAIL_ERROR('Mail diario de verificacion P_CONTABILIZAR_DIA:'||to_char(sysdate,'dd-mm-yyyy'),' Mail diario de verificacion P_CONTABILIZAR_DIA',DESTINATARIOS);
+  P_NUM_FIN := P_TOOLS.FN_REGISTRA_PROCESO_NOCTURNO('P_CONTABILIZAR_DIA.P_CONTAB_DIA','FIN');
+  COMMIT;
+
+END P_CONTAB_DIA;
+
+PROCEDURE P_CONTAB_DIA
+   (P_FECHA IN DATE
+   ) IS 
+   -- PL/SQL Specification
+  PROCESO             NUMBER;
+  P_NUM_INI NUMBER;
+  P_NUM_FIN NUMBER; 
+BEGIN
+  P_NUM_INI := P_TOOLS.FN_REGISTRA_PROCESO_NOCTURNO('P_CONTABILIZAR_DIA.P_CONTAB_DIA','INI');
+  P_CONTAB_BANCOS(P_FECHA);
+  P_CONTAB_BANCOS_EXTERIOR(P_FECHA);
+  P_CONTAB_DIVISAS(P_FECHA);
+  P_CONTAB_TERCEROS(P_FECHA);
+  P_CONTAB_CLIENTES(P_FECHA);
+  P_CONTAB_APTS(P_FECHA);
+  P_CONTAB_FACTURAS(P_FECHA);
+
+  P_CONTAB_APORTES_FONDOS(P_FECHA);
+  P_CONTAB_INVERSIONES_FONDOS(P_FECHA);
+  P_CONTAB_POSPROPIA(P_FECHA,27,'%');
+  P_CONTAB_POSPROPIA(P_FECHA,19,'%');
+  P_CONTAB_ADMON_VALORES (P_FECHA);
+  P_CONTAB_INMOBILIARIO(P_FECHA);
+  P_CONTAB_ING_EGR(P_FECHA);
+  P_CONTAB_DERIVADOS_FONDOS(P_FECHA);
+  P_CONTAB_COMPROM_FUT (P_FECHA);
+  P_CONTAB_FONDOS_RV(P_FECHA,'CFP');
+
+  -- MES: PROYECTO DIVISAS FONDOS
+  P_CONTAB_CBAN_EXTFON (P_FECHA);
+  P_CONTAB_DIVISAS_FON (P_FECHA);
+
+  -- VAGTUD881 - INVERSIONES INTERNACIONALES FICS
+  P_CONTAB_INVINT_FON (P_FECHA);
+
+  -- VAGTUD975-3 INVERSIONES EN CREDITOS - FCP DEUDA
+  P_CONTAB_CREDITOS_FON(P_FECHA);
+
+    P_MAIL.ENVIO_MAIL_ERROR('Mail diario de verificacion P_CONTABILIZAR_DIA:'||to_char(sysdate,'dd-mm-yyyy'),' Mail diario de verificacion P_CONTABILIZAR_DIA',DESTINATARIOS);
+    P_NUM_FIN := P_TOOLS.FN_REGISTRA_PROCESO_NOCTURNO('P_CONTABILIZAR_DIA.P_CONTAB_DIA','FIN');
+  COMMIT;
+END P_CONTAB_DIA;
+---------------------------------------------------------------------------
+---------------------------------------------------------------------------
+---------------------------------------------------------------------------
+---------------------------------------------------------------------------
+---------------------------------------------------------------------------
+
+PROCEDURE P_CONTAB_BANCOS     (P_FECHA IN DATE ) IS
+  CURSOR C_NEGOCIOS IS
+    SELECT NEG_CONSECUTIVO
+    FROM   NEGOCIOS
+    WHERE EXISTS(SELECT 'X'
+                  FROM CUENTAS_BANCARIAS_CORREDORES
+                  WHERE CBA_NEG_CONSECUTIVO = NEG_CONSECUTIVO)
+    ORDER BY NEG_CONSECUTIVO;
+
+  R_NEG               C_NEGOCIOS%ROWTYPE;
+  REGISTRO            NUMBER;
+  PROCESO             NUMBER;
+  R_LISTA_PROCESOS    P_CONT_BANCOS.R_PROCESOS;	
+  R_LISTA_NEGOCIOS    P_CONT_BANCOS.R_LISTA_NEGOCIO;
+BEGIN
+  R_LISTA_PROCESOS.delete;
+  R_LISTA_NEGOCIOS.delete;
+  REGISTRO := 1;
+  OPEN C_NEGOCIOS;
+  FETCH C_NEGOCIOS INTO R_NEG;
+  WHILE C_NEGOCIOS%FOUND LOOP
+      R_LISTA_NEGOCIOS(REGISTRO).NEGOCIO := R_NEG.NEG_CONSECUTIVO;
+      REGISTRO := REGISTRO + 1;
+      FETCH C_NEGOCIOS INTO R_NEG;
+  END LOOP;
+  CLOSE C_NEGOCIOS;
+  P_CONT_BANCOS.CONT_BANCOS('%','%','%',P_FECHA,PROCESO,R_LISTA_NEGOCIOS,R_LISTA_PROCESOS);
+    COMMIT;
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        P_MAIL.ENVIO_MAIL_ERROR('Mail diario de verificacion P_CONTABILIZAR_DIA:'||to_char(sysdate,'dd-mm-yyyy'),'Error en dinamicas de bancos : '||SQLERRM,DESTINATARIOS);
+END P_CONTAB_BANCOS;
+-------------
+PROCEDURE P_CONTAB_BANCOS_EXTERIOR     (P_FECHA IN DATE ) IS
+  PROCESO             NUMBER;
+  R_LISTA_PROCESOS1   P_CONT_BANCOS_EXTERIOR.R_PROCESOS;
+BEGIN
+    R_LISTA_PROCESOS1.DELETE;
+    P_CONT_BANCOS_EXTERIOR.CONT_BANCOS_EXTERIOR('%','%','%',P_FECHA,PROCESO,'%',R_LISTA_PROCESOS1);
+    COMMIT;
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        P_MAIL.ENVIO_MAIL_ERROR('Mail diario de verificacion P_CONTABILIZAR_DIA:'||to_char(sysdate,'dd-mm-yyyy'),'Error en dinamicas de bancos exterior : '||SQLERRM,DESTINATARIOS);
+END P_CONTAB_BANCOS_EXTERIOR;
+-------------
+PROCEDURE P_CONTAB_DIVISAS     (P_FECHA IN DATE ) IS
+  PROCESO             NUMBER;
+BEGIN
+    P_CONT_DIVISAS.CONT_DIVISAS('%',P_FECHA,PROCESO);
+    COMMIT;
+  EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        P_MAIL.ENVIO_MAIL_ERROR('Mail diario de verificacion P_CONTABILIZAR_DIA:'||to_char(sysdate,'dd-mm-yyyy'),'Error en dinamica de divisas : '||SQLERRM,DESTINATARIOS);
+END P_CONTAB_DIVISAS;
+---------------
+PROCEDURE P_CONTAB_TERCEROS     (P_FECHA IN DATE ) IS
+  CURSOR C_NEGOCIOS IS
+    SELECT NEG_CONSECUTIVO
+    FROM   NEGOCIOS
+    WHERE (EXISTS (SELECT 'X'
+                  FROM TIPOS_DOCUMENTOS_TERCEROS
+                      ,DINAMICA_TERCEROS
+                  WHERE DTE_TDT_MNEMONICO = TDT_MNEMONICO 
+                    AND DTE_NEGOCIO = TO_CHAR(NEG_CONSECUTIVO))
+            OR
+                (EXISTS (SELECT 'X'
+                          FROM TIPOS_DOCUMENTOS_TERCEROS
+                              ,DINAMICA_TERCEROS
+                          WHERE DTE_TDT_MNEMONICO = TDT_MNEMONICO 
+                            AND DTE_NEGOCIO = 'NEG')
+                    AND NOT
+                 EXISTS (SELECT 'X'
+                          FROM TIPOS_DOCUMENTOS_TERCEROS
+                              ,DINAMICA_TERCEROS
+                          WHERE DTE_NEGOCIO = TO_CHAR(NEG_CONSECUTIVO))))
+
+
+    ORDER BY NEG_CONSECUTIVO;
+
+  R_NEG               C_NEGOCIOS%ROWTYPE;
+  REGISTRO            NUMBER;
+  PROCESO             NUMBER;
+  R_LISTA_PROCESOS    P_CONT_TERCEROS.R_PROCESOS;    
+  R_LISTA_NEGOCIOS    P_CONT_TERCEROS.R_LISTA_NEGOCIO;
+BEGIN
+  R_LISTA_PROCESOS.delete;
+  R_LISTA_NEGOCIOS.delete;
+  REGISTRO := 1;
+  OPEN C_NEGOCIOS;
+  FETCH C_NEGOCIOS INTO R_NEG;
+  WHILE C_NEGOCIOS%FOUND LOOP
+      R_LISTA_NEGOCIOS(REGISTRO).NEGOCIO := R_NEG.NEG_CONSECUTIVO;
+      REGISTRO := REGISTRO + 1;
+      FETCH C_NEGOCIOS INTO R_NEG;
+  END LOOP;
+  CLOSE C_NEGOCIOS;
+  P_CONT_TERCEROS.CONT_TERCEROS('%',P_FECHA,PROCESO,R_LISTA_NEGOCIOS,R_LISTA_PROCESOS);
+  COMMIT;
+EXCEPTION
+  WHEN OTHERS THEN
+      ROLLBACK;
+      P_MAIL.ENVIO_MAIL_ERROR('Mail diario de verificacion P_CONTABILIZAR_DIA:'||to_char(sysdate,'dd-mm-yyyy'),'Error en dinamica de terceros : '||SQLERRM,DESTINATARIOS);
+END P_CONTAB_TERCEROS;
+----
+PROCEDURE P_CONTAB_CLIENTES     (P_FECHA IN DATE ) IS
+  PROCESO             NUMBER;
+BEGIN
+    P_CONT_CLIENTES.CONT_CLIENTES('%',P_FECHA,PROCESO);
+    COMMIT;
+  EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        P_MAIL.ENVIO_MAIL_ERROR('Mail diario de verificacion P_CONTABILIZAR_DIA:'||to_char(sysdate,'dd-mm-yyyy'),'Error en dinamica de clientes : '||SQLERRM,DESTINATARIOS);
+END P_CONTAB_CLIENTES;
+----
+PROCEDURE P_CONTAB_APTS     (P_FECHA IN DATE ) IS
+  PROCESO             NUMBER;
+BEGIN
+    P_CONT_APTS.CONT_APTS('%','%',P_FECHA,'%',PROCESO);
+    COMMIT;
+  EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        P_MAIL.ENVIO_MAIL_ERROR('Mail diario de verificacion P_CONTABILIZAR_DIA:'||to_char(sysdate,'dd-mm-yyyy'),'Error en dinamica de APTS : '||SQLERRM,DESTINATARIOS);
+END P_CONTAB_APTS;
+-----
+PROCEDURE P_CONTAB_FACTURAS     (P_FECHA IN DATE ) IS
+  PROCESO             NUMBER;
+  R_LISTA_PROCESOS2   P_CONT_FACTURAS.R_PROCESOS;
+BEGIN
+    R_LISTA_PROCESOS2.DELETE;
+    P_CONT_FACTURAS.CONT_FACTURAS(P_FECHA,'%',PROCESO,'%',R_LISTA_PROCESOS2);
+    COMMIT;
+  EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        P_MAIL.ENVIO_MAIL_ERROR('Mail diario de verificacion P_CONTABILIZAR_DIA:'||to_char(sysdate,'dd-mm-yyyy'),'Error en dinamica de facturas : '||SQLERRM,DESTINATARIOS);
+END P_CONTAB_FACTURAS;
+-----
+PROCEDURE P_CONTAB_APORTES_FONDOS (P_FECHA IN DATE ) IS
+  CURSOR C_FONDOS IS
+    SELECT MAX(FON_NOTA_CLIENTES) AS MAX_FON_NOTA_CLIENTES
+    FROM   FONDOS
+    WHERE FON_TIPO_ADMINISTRACION  IN ('A','F')
+      AND FON_ESTADO = 'A'
+      AND FON_TIPO != 'O'
+      AND EXISTS(SELECT 'X'
+                        FROM PARAMETROS_FONDOS
+                        WHERE  PFO_FON_CODIGO = FON_CODIGO
+                          AND  PFO_PAR_CODIGO = 67
+                          AND  PFO_RANGO_MIN_CHAR = 'S');
+  R_FON               C_FONDOS%ROWTYPE;
+  NNOTA               NUMBER;
+	P_LISTA_NOTAS       P_CONTABLE.R_NOTAS;
+BEGIN
+	P_LISTA_NOTAS.DELETE;	
+
+  OPEN C_FONDOS;
+  FETCH C_FONDOS INTO R_FON;
+  CLOSE C_FONDOS;
+  P_CONTABLE.CONT_CLIENTES_FONDOS(
+            FONDO => '',--R_FON.FON_CODIGO,
+            FECHA => P_FECHA,
+            QNOTA => R_FON.MAX_FON_NOTA_CLIENTES,
+            NEGO  => 0,				
+            NNOTA => NNOTA,
+            TIPO_ADMINISTRACION =>  'T',
+            LISTA_NOTAS => P_LISTA_NOTAS);
+  COMMIT;
+EXCEPTION
+  WHEN OTHERS THEN
+      ROLLBACK;
+      P_MAIL.ENVIO_MAIL_ERROR('Mail diario de verificacion P_CONTABILIZAR_DIA:'||to_char(sysdate,'dd-mm-yyyy'),'Error en dinamica de aportes fondos : '||SQLERRM,DESTINATARIOS);
+END P_CONTAB_APORTES_FONDOS;
+-----
+
+PROCEDURE P_CONTAB_INVERSIONES_FONDOS (P_FECHA IN DATE) IS
+  CURSOR C_FONDOS IS
+    SELECT MAX(FON_NOTA_INVERSIONES) AS MAX_FON_NOTA_INVERSIONES
+          ,TO_NUMBER(MAX(FON_PREFIJO_CONTABLE))+1 AS MAX_FON_PREFIJO_CONTABLE 
+    FROM   FONDOS
+    WHERE FON_TIPO_ADMINISTRACION  IN ('A','F')
+      AND FON_ESTADO = 'A'
+      AND FON_TIPO != 'O'
+      AND EXISTS(SELECT 'X'
+                        FROM PARAMETROS_FONDOS
+                        WHERE  PFO_FON_CODIGO = FON_CODIGO
+                          AND  PFO_PAR_CODIGO = 67
+                          AND  PFO_RANGO_MIN_CHAR = 'S');
+   CURSOR C_FONDO IS
+      SELECT FON_CODIGO
+      FROM   VALORIZACIONES_FONDO,
+             FONDOS 
+      WHERE  TRUNC(VFO_FECHA_VALORIZACION) >= TRUNC(P_FECHA-1)
+      AND    TRUNC(VFO_FECHA_VALORIZACION) < TRUNC(P_FECHA)
+      AND    VFO_FON_CODIGO = FON_CODIGO
+	  UNION
+	  SELECT FON_CODIGO
+      FROM   FONDOS
+      WHERE  EXISTS (SELECT 'X' 
+                     FROM   PARAMETROS_FONDOS
+                     WHERE  PFO_PAR_CODIGO IN (19)
+                     AND    PFO_FON_CODIGO = FON_CODIGO
+                     AND    PFO_RANGO_MIN_CHAR IN ('S','SI'));
+
+   CURSOR C_RUTA IS
+      SELECT DIRECTORY_NAME RUTA 
+      FROM DBA_DIRECTORIES 
+      WHERE DIRECTORY_NAME = 'NTFMAILATT';
+
+
+  R_FON               C_FONDOS%ROWTYPE;
+  NNOTA               NUMBER;
+	P_LISTA_NOTAS       P_CONTABLE.R_NOTAS;
+  P_FONDO             FONDOS.FON_CODIGO%TYPE;
+
+    V_ASUNTO_EMAIL         VARCHAR2(250);--Se agranda el campo por error que aparecio en la mañana del 8 de oct del 2020
+    V_MENSAJE_EMAIL       CLOB;
+    V_VALOR_NEGATIVO      NUMBER;
+    V_EMAIL               VARCHAR2(200);
+    P_CLOB                CLOB;
+
+    C_RUTA_ATTCH      VARCHAR2(512);
+    V_RUTA    VARCHAR2(512);
+    V_NOMBREP VARCHAR2(128);
+    V_NOMBTAB VARCHAR2(128);
+    V_NMBRARC VARCHAR2(256);
+    V_STRLINE VARCHAR2(4000);
+    V_ARCHIVO UTL_FILE.FILE_TYPE;
+
+    P_ARCHIVO V_NMBRARC%type;
+    DESTINATARIOS1 VARCHAR2(250) := 'posicionpcontabilidad@corredores.com;fondoscontabilidad@corredores.com;conciliacionesbancarias@corredores.com;aruiz@corredores.com;';													  
+BEGIN
+DBMS_OUTPUT.PUT_LINE('NOCTURNO FONDOS');
+  OPEN C_RUTA;
+  FETCH C_RUTA INTO V_RUTA;
+    IF C_RUTA%NOTFOUND THEN
+       V_RUTA := 'NTFMAILATT';
+    END IF;
+  CLOSE C_RUTA;
+  C_RUTA_ATTCH :='NTFMAILATT';
+  V_NMBRARC := 'Log_Dinamicas_Fondos_'||TO_CHAR(P_FECHA,'DDMMYYYY')||'.txt';
+  V_ARCHIVO := UTL_FILE.FOPEN(V_RUTA, V_NMBRARC, 'W',10000);											
+	P_LISTA_NOTAS.DELETE;	
+
+  OPEN C_FONDO;
+  FETCH C_FONDO INTO P_FONDO;
+  WHILE C_FONDO%FOUND 
+    LOOP
+
+      BEGIN
+        /*IF P_FONDO = '900576568' THEN
+          DBMS_OUTPUT.PUT_LINE('SEGUIMIENTO');
+        END IF;*/
+        OPEN C_FONDOS;
+        FETCH C_FONDOS INTO R_FON;
+        CLOSE C_FONDOS;
+        DBMS_OUTPUT.PUT_LINE('------------------------------------------------------------');
+        DBMS_OUTPUT.PUT_LINE('P_FONDO '||P_FONDO||' P_FECHA '||P_FECHA||' R_FON.MAX_FON_NOTA_INVERSIONES '||
+                              R_FON.MAX_FON_NOTA_INVERSIONES||' R_FON.MAX_FON_PREFIJO_CONTABLE '||R_FON.MAX_FON_PREFIJO_CONTABLE);
+        P_CONTABLE.CONT_INVER_FONDOS(FONDO => P_FONDO,
+                                      FECHA => P_FECHA,
+                                      QNOTA => R_FON.MAX_FON_NOTA_INVERSIONES,
+                                      NEGO  => R_FON.MAX_FON_PREFIJO_CONTABLE,				
+                                      NNOTA => NNOTA,
+                                      TIPO_ADMINISTRACION =>  'T',
+                                      LISTA_NOTAS => P_LISTA_NOTAS);
+
+        V_STRLINE := 'P_FONDO '||P_FONDO||' P_FECHA '||P_FECHA||' Termino la dinamica para este fondo';
+        DBMS_OUTPUT.PUT_LINE('V_STRLINE '||V_STRLINE);
+        UTL_FILE.PUT_LINE(V_ARCHIVO, V_STRLINE);
+      EXCEPTION 
+        WHEN OTHERS THEN 
+          DBMS_OUTPUT.put_line('Errm '||SQLERRM||' Error en la dinamica de fondos con el nit '||P_FONDO);
+          ROLLBACK;
+          V_STRLINE := 'Errm '||SQLERRM||' Error en la dinamica de fondos con el nit '||P_FONDO;
+          UTL_FILE.PUT_LINE(V_ARCHIVO, V_STRLINE);
+      END;
+      COMMIT;
+      FETCH C_FONDO INTO P_FONDO;
+    END LOOP;
+    UTL_FILE.FCLOSE(V_ARCHIVO);
+    P_ARCHIVO := V_NMBRARC;
+    V_ASUNTO_EMAIL := 'Notificacion Dinamica Inversion fondos:'||to_char(sysdate,'DD/MM/YYYY');
+    --DBMS_OUTPUT.PUT_LINE('Asunto '||V_ASUNTO_EMAIL);
+    V_MENSAJE_EMAIL := 'Buen dia, la presente es para adjuntar el archivo con la ejecucion de la dinamica'|| 
+                       'de fondos en donde se va a presentar los fondos que terminaron bien y'|| 
+                       'aquellos que su dinamica se vio afectada por algun proceso';
+   P_NOTIFICACIONES_MAIL.PR_ENVIO_MAIL(  P_CLI_PER_TID_CODIGO => 'NIT'
+                                        ,P_CLI_PER_NUM_IDEN   => '860079174'
+                                        ,P_SERVICIO           => 'DINAMICA_INV_FONDOS'
+                                        ,P_DE                 => 'notificacionesNocturno@corredores.com'
+                                        ,P_PARA               => DESTINATARIOS1
+                                        ,P_ASUNTO             => V_ASUNTO_EMAIL
+                                        ,P_MENSAJE            => V_MENSAJE_EMAIL
+                                        ,P_CLOB               => P_CLOB
+                                        ,P_MENSAJE_CLOB       => NULL
+                                        ,P_ADJUNTO            => P_ARCHIVO
+                                        );
+   DBMS_OUTPUT.PUT_LINE('Termina de enviar correo '||V_MENSAJE_EMAIL);
+  CLOSE C_FONDO;    
+  /*P_CONTABLE.CONT_INVER_FONDOS(
+            FONDO => '',
+            FECHA => P_FECHA,
+            QNOTA => R_FON.MAX_FON_NOTA_INVERSIONES,
+            NEGO  => R_FON.MAX_FON_PREFIJO_CONTABLE,				
+            NNOTA => NNOTA,
+            TIPO_ADMINISTRACION =>  'T',
+            LISTA_NOTAS => P_LISTA_NOTAS);*/
+  /*P_CONTABLE.CONT_INVER_FONDOS(
+			FONDO => '8600791743', -- Recursos Propios
+            FECHA => P_FECHA,
+            QNOTA => 'IF',
+            NEGO  => 1,				
+            NNOTA => NNOTA,
+            TIPO_ADMINISTRACION =>  'E',
+            LISTA_NOTAS => P_LISTA_NOTAS);
+  P_CONTABLE.CONT_INVER_FONDOS(
+            FONDO => '860079174',  -- Posicion Propia
+            FECHA => P_FECHA,
+            QNOTA => 'IF',
+            NEGO  => 1,				
+            NNOTA => NNOTA,
+            TIPO_ADMINISTRACION =>  'E',
+            LISTA_NOTAS => P_LISTA_NOTAS);*/
+  COMMIT;
+EXCEPTION
+  WHEN OTHERS THEN
+      ROLLBACK;
+      P_MAIL.ENVIO_MAIL_ERROR('Mail diario de verificacion P_CONTABILIZAR_DIA:'||to_char(sysdate,'dd-mm-yyyy'),'Error en dinamica de inversiones fondos : '||SQLERRM,DESTINATARIOS);
+END P_CONTAB_INVERSIONES_FONDOS;
+
+PROCEDURE P_CONTAB_POSPROPIA( P_FECHA             IN DATE,
+                              P_PFO_PAR_CODIGO    IN NUMBER,
+                              P_DPP_TDP_MNEMONICO IN VARCHAR2) IS
+  CURSOR C_FONDOS IS
+      SELECT FON_CODIGO
+            ,FON_RAZON_SOCIAL
+      FROM   FONDOS
+      WHERE  EXISTS (SELECT 'X' 
+                     FROM   PARAMETROS_FONDOS
+                     WHERE  PFO_PAR_CODIGO = P_PFO_PAR_CODIGO
+                     AND    PFO_FON_CODIGO = FON_CODIGO
+                     AND    PFO_RANGO_MIN_CHAR IN ('S','SI'))
+      AND    FON_ESTADO = 'A'
+      ORDER  BY 1;
+
+  R_FON               C_FONDOS%ROWTYPE;
+  PROCESO             NUMBER;
+  PROCESO_ANT         NUMBER;
+BEGIN
+  OPEN C_FONDOS;
+  FETCH C_FONDOS INTO R_FON;
+  WHILE C_FONDOS%FOUND LOOP
+      P_CONT_POSICION.CONT_POSICION(R_FON.FON_CODIGO, P_DPP_TDP_MNEMONICO, P_FECHA - 1, 'S', PROCESO_ANT);
+      P_CONT_POSICION.CONT_POSICION(R_FON.FON_CODIGO, P_DPP_TDP_MNEMONICO, P_FECHA, 'N', PROCESO);
+      FETCH C_FONDOS INTO R_FON;
+  END LOOP;
+  CLOSE C_FONDOS;
+  IF P_PFO_PAR_CODIGO = 19 THEN
+     --VAGTUS04914 - Se elimina reversión de dinámica anterior
+     --P_CONT_POSICION.CONT_POSICION_RV_REVERSION(R_FON.FON_CODIGO,'CFP',P_FECHA - 1,PROCESO);
+     P_CONT_POSICION.CONT_POSICION_RV(R_FON.FON_CODIGO,'CFP',P_FECHA,'N',PROCESO);
+  END IF;
+  COMMIT;
+EXCEPTION
+  WHEN OTHERS THEN
+      ROLLBACK;
+      P_MAIL.ENVIO_MAIL_ERROR('Mail diario de verificacion P_CONTABILIZAR_DIA:'||to_char(sysdate,'dd-mm-yyyy'),'Error en dinamica de posicion propia : '||SQLERRM,DESTINATARIOS);
+END P_CONTAB_POSPROPIA;
+
+PROCEDURE P_CONTAB_ADMON_VALORES (P_FECHA  IN DATE) IS
+
+ PROCESO     NUMBER;
+ PROCESO_ANT NUMBER;
+
+ BEGIN  
+   P_CONT_ADMON_VALORES.CONT_VALORES('%',P_FECHA-1,'S',PROCESO_ANT);   
+   P_CONT_ADMON_VALORES.CONT_VALORES('%',P_FECHA,'N',PROCESO);
+
+ EXCEPTION
+  WHEN OTHERS THEN
+      ROLLBACK;
+      P_MAIL.ENVIO_MAIL_ERROR('Mail diario de verificacion P_CONTABILIZAR_DIA:'||to_char(sysdate,'dd-mm-yyyy'),'Error en dinámica de Administración Valores  : '||SQLERRM,DESTINATARIOS);	
+
+END P_CONTAB_ADMON_VALORES;
+----------------------------
+
+PROCEDURE P_CONTAB_INMOBILIARIO  (P_FECHA IN DATE ) IS
+  PROCESO             NUMBER;
+  R_LISTA_PROCESOS2   P_CONT_INMOBILIARIO.R_PROCESOS;
+BEGIN
+    R_LISTA_PROCESOS2.DELETE;
+    P_CONT_INMOBILIARIO.CONT_INMOBILIARIO(P_FECHA,'%',PROCESO,'%',R_LISTA_PROCESOS2);
+    COMMIT;
+  EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        P_MAIL.ENVIO_MAIL_ERROR('Mail diario de verificacion P_CONTABILIZAR_DIA:'||to_char(sysdate,'dd-mm-yyyy'),'Error en dinamica de Fondo Inmobiliario : '||SQLERRM,DESTINATARIOS);
+END P_CONTAB_INMOBILIARIO;
+
+----------------------------
+
+PROCEDURE P_CONTAB_ING_EGR  (P_FECHA IN DATE ) IS
+  PROCESO             NUMBER;
+  R_LISTA_PROCESOS2   P_CONT_INGRESOS_EGRESOS.R_PROCESOS;
+BEGIN
+    R_LISTA_PROCESOS2.DELETE;
+    P_CONT_INGRESOS_EGRESOS.CONT_ING_EGR(P_FECHA,'%',PROCESO,'%',R_LISTA_PROCESOS2);
+    COMMIT;
+  EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        P_MAIL.ENVIO_MAIL_ERROR('Mail diario de verificacion P_CONTABILIZAR_DIA:'||to_char(sysdate,'dd-mm-yyyy'),'Error en dinamica de Otros Ingresos/Egresos : '||SQLERRM,DESTINATARIOS);
+END P_CONTAB_ING_EGR;
+
+PROCEDURE P_CONTAB_DERIVADOS_FONDOS (P_FECHA IN DATE) IS
+   CURSOR C_NEGOCIOS IS
+      SELECT NEG_CONSECUTIVO
+        FROM NEGOCIOS
+       WHERE (EXISTS (SELECT 'X'
+                       FROM TIPOS_DOCUMENTOS_DERIVADOS
+                           ,DINAMICA_DERIVADOS
+                      WHERE DDE_TDDR_MNEMONICO = TDDR_MNEMONICO 
+                        AND DDE_NEGOCIO = TO_CHAR(NEG_CONSECUTIVO))
+              OR
+             (EXISTS (SELECT 'X'
+                           FROM TIPOS_DOCUMENTOS_DERIVADOS
+                               ,DINAMICA_DERIVADOS
+                          WHERE DDE_TDDR_MNEMONICO = TDDR_MNEMONICO 
+                            AND DDE_NEGOCIO = 'NEG')
+              AND NOT EXISTS (SELECT 'X'
+                                FROM TIPOS_DOCUMENTOS_DERIVADOS
+                                    ,DINAMICA_DERIVADOS
+                               WHERE DDE_NEGOCIO = TO_CHAR(NEG_CONSECUTIVO))))
+
+
+      ORDER BY NEG_CONSECUTIVO;
+   R_NEG               C_NEGOCIOS%ROWTYPE;
+   PROCESO             NUMBER;
+   REGISTRO            NUMBER;
+   R_LISTA_PROCESOS    P_CONT_DERIVADOS.R_PROCESOS;
+   R_LISTA_NEGOCIOS    P_CONT_DERIVADOS.R_LISTA_NEGOCIO;
+
+BEGIN
+   R_LISTA_PROCESOS.DELETE;
+   R_LISTA_NEGOCIOS.DELETE;
+   REGISTRO := 1;
+   OPEN C_NEGOCIOS;
+   FETCH C_NEGOCIOS INTO R_NEG;
+   WHILE C_NEGOCIOS%FOUND LOOP
+      R_LISTA_NEGOCIOS(REGISTRO).NEGOCIO := R_NEG.NEG_CONSECUTIVO;
+      REGISTRO := REGISTRO + 1;
+      FETCH C_NEGOCIOS INTO R_NEG;
+   END LOOP;
+   CLOSE C_NEGOCIOS;
+   P_CONT_DERIVADOS.CONT_DERIVADOS('%',P_FECHA,PROCESO,R_LISTA_NEGOCIOS,R_LISTA_PROCESOS);
+   COMMIT;
+
+   EXCEPTION
+      WHEN OTHERS THEN
+         ROLLBACK;
+         P_MAIL.ENVIO_MAIL_ERROR('Mail diario de verificacion P_CONTABILIZAR_DIA:'||to_char(sysdate,'dd-mm-yyyy'),
+								'Error en dinamica de Derivados : '||SQLERRM,DESTINATARIOS);
+
+END P_CONTAB_DERIVADOS_FONDOS;
+
+PROCEDURE P_CONTAB_FONDOS_RV(P_FECHA IN DATE,
+                            P_DPP_TDP_MNEMONICO IN VARCHAR2) IS
+  PROCESO             VARCHAR2(32000);
+  PROCESO_ANT         VARCHAR2(32000);
+BEGIN
+  --VAGTUS04914 - Se elimina reversión de dinámica anterior
+  --P_CONTABLE.CONT_FONDOS_RV_REVERSION('%',P_DPP_TDP_MNEMONICO,P_FECHA - 1,PROCESO_ANT);
+  P_CONTABLE.CONT_FONDOS_RV('%',P_DPP_TDP_MNEMONICO,P_FECHA,'N',PROCESO);
+  COMMIT;
+EXCEPTION
+  WHEN OTHERS THEN
+      ROLLBACK;
+      P_MAIL.ENVIO_MAIL_ERROR('Mail diario de verificacion P_CONTABILIZAR_DIA:'||to_char(sysdate,'dd-mm-yyyy'),'Error en dinamica de fondos RV : '||SQLERRM,DESTINATARIOS);
+END P_CONTAB_FONDOS_RV;
+
+-- MES: PROYECTO DIVISAS FONDOS
+-- PROCESO QUE GENERA LA DINAMICA PARA REPORTAR LOS MOVIMIENTOS DE CUENTAS BANCARIAS EXTRANJERAS
+PROCEDURE P_CONTAB_CBAN_EXTFON   (P_FECHA IN DATE) IS
+
+   -- CURSOR QUE TRAE LOS NEGOCIOS RELACIONADOS CON LA DINAMICA DE BANCOS EXT. FICS
+   CURSOR C_NEGOCIOS IS
+      SELECT NEG_CONSECUTIVO
+        FROM NEGOCIOS
+       WHERE EXISTS (SELECT 'S'
+                       FROM CUENTAS_BANCARIAS_EXT_FONDOS
+                           ,FONDOS
+                      WHERE CBEF_FON_CODIGO = FON_CODIGO
+                        AND FON_NEG_CONSECUTIVO = NEG_CONSECUTIVO)
+      ORDER BY NEG_CONSECUTIVO;
+   R_NEG               C_NEGOCIOS%ROWTYPE;
+   PROCESO             NUMBER;
+   REGISTRO            NUMBER;
+   R_LISTA_PROCESOS    P_CONT_CBAN_EXTFON.R_PROCESOS;
+   R_LISTA_NEGOCIOS    P_CONT_CBAN_EXTFON.R_LISTA_NEGOCIO;
+
+BEGIN
+   R_LISTA_PROCESOS.DELETE;
+   R_LISTA_NEGOCIOS.DELETE;
+   REGISTRO := 1;
+   OPEN C_NEGOCIOS;
+   FETCH C_NEGOCIOS INTO R_NEG;
+   WHILE C_NEGOCIOS%FOUND LOOP
+      R_LISTA_NEGOCIOS(REGISTRO).NEGOCIO := R_NEG.NEG_CONSECUTIVO;
+      REGISTRO := REGISTRO + 1;
+      FETCH C_NEGOCIOS INTO R_NEG;
+   END LOOP;
+   CLOSE C_NEGOCIOS;
+   P_CONT_CBAN_EXTFON.CONT_CBAN_EXTFON('%','%','%',P_FECHA,PROCESO,R_LISTA_NEGOCIOS,R_LISTA_PROCESOS);
+   COMMIT;
+
+   EXCEPTION
+      WHEN OTHERS THEN
+         ROLLBACK;
+         P_MAIL.ENVIO_MAIL_ERROR('Mail diario de verificacion P_CONTABILIZAR_DIA:'||to_char(sysdate,'dd-mm-yyyy'),
+								'Error en dinamica de Bancos Ext. Neg : '||SQLERRM,DESTINATARIOS);
+
+END P_CONTAB_CBAN_EXTFON;
+
+-- PROCESO QUE GENERA LA DINAMICA PARA REPORTAR LOS NEGOCIOS DE COMPRA Y VENTA DE DIVISAS FONDOS
+PROCEDURE P_CONTAB_DIVISAS_FON   (P_FECHA IN DATE)  IS
+
+   -- CURSOR QUE TRAE LOS NEGOCIOS RELACIONADOS CON LA DINAMICA DE NEGOCIOS DE DIVISAS FICS
+   CURSOR C_NEGOCIOS IS
+      SELECT NEG_CONSECUTIVO
+        FROM NEGOCIOS
+       WHERE EXISTS (SELECT 'S'
+                       FROM CUENTAS_BANCARIAS_EXT_FONDOS
+                           ,FONDOS
+                      WHERE CBEF_FON_CODIGO = FON_CODIGO
+                        AND FON_NEG_CONSECUTIVO = NEG_CONSECUTIVO)
+      ORDER BY NEG_CONSECUTIVO;
+
+   R_NEG               C_NEGOCIOS%ROWTYPE;
+   PROCESO             NUMBER;
+   REGISTRO            NUMBER;
+   R_LISTA_PROCESOS    P_CONT_DIVISAS_FON.R_PROCESOS;
+   R_LISTA_NEGOCIOS    P_CONT_DIVISAS_FON.R_LISTA_NEGOCIO;
+
+BEGIN
+   R_LISTA_PROCESOS.DELETE;
+   R_LISTA_NEGOCIOS.DELETE;
+   REGISTRO := 1;
+   OPEN C_NEGOCIOS;
+   FETCH C_NEGOCIOS INTO R_NEG;
+   WHILE C_NEGOCIOS%FOUND LOOP
+      R_LISTA_NEGOCIOS(REGISTRO).NEGOCIO := R_NEG.NEG_CONSECUTIVO;
+      REGISTRO := REGISTRO + 1;
+      FETCH C_NEGOCIOS INTO R_NEG;
+   END LOOP;
+   CLOSE C_NEGOCIOS;
+   P_CONT_DIVISAS_FON.CONT_DIVISAS_FON('%',P_FECHA,PROCESO,R_LISTA_NEGOCIOS,R_LISTA_PROCESOS);
+   COMMIT;
+
+   EXCEPTION
+      WHEN OTHERS THEN
+         ROLLBACK;
+         P_MAIL.ENVIO_MAIL_ERROR('Mail diario de verificacion P_CONTABILIZAR_DIA:'||to_char(sysdate,'dd-mm-yyyy'),
+								'Error en dinamica de Op Divisas Neg. : '||SQLERRM,DESTINATARIOS);
+
+END P_CONTAB_DIVISAS_FON;
+
+PROCEDURE P_CONTAB_COMPROM_FUT(P_FECHA IN DATE) IS
+
+   CURSOR C_NEGOCIOS IS
+      SELECT DISTINCT FON_NEG_CONSECUTIVO
+        FROM FONDOS AA, MVTOS_RENTA_FIJA
+       WHERE MRF_TFO_FON_CODIGO = FON_CODIGO
+         AND TRUNC(MRF_FECHA) >= TRUNC(P_FECHA)
+	       AND TRUNC(MRF_FECHA) <  TRUNC(P_FECHA + 1)
+         AND MRF_TMT_MNEMONICO in (SELECT DISTINCT DCFU_TMT_MNEMONICO
+                                     FROM  DINAMICA_COMPROMISOS_FUT)
+         AND FON_CODIGO != '860079174'									-- NO INCLUYE POSICION PROPIA
+         AND FON_TIPO_ADMINISTRACION = 'F'							-- SOLO APLICA PARA FICS
+         AND NVL(FON_CAPITAL_PRIVADO,'N') = 'N'			  	-- NO APLICA PARA FONDOS DE CAPITAL PRIVADO
+         AND FON_TIPO = 'A'
+         AND FON_ESTADO = 'A'
+         AND NOT EXISTS (SELECT 'X'                     --FICS
+                           FROM FONDOS FF
+                               ,PARAMETROS_FONDOS PF
+                          WHERE PF.PFO_FON_CODIGO = FF.FON_CODIGO
+                            AND PF.PFO_FON_CODIGO = AA.FON_CODIGO
+                            AND PF.PFO_PAR_CODIGO IN (70)
+                            AND NVL(PF.PFO_RANGO_MIN_CHAR,'N') = 'S'
+                            AND FF.FON_CODIGO = AA.FON_CODIGO)
+         ORDER BY AA.FON_NEG_CONSECUTIVO; 
+    R_NEG       C_NEGOCIOS%ROWTYPE;
+
+   PROCESO             NUMBER;
+   REGISTRO            NUMBER;
+   R_LISTA_PROCESOS    P_CONT_COMPROMISOS_FUT.R_PROCESOS;
+   R_LISTA_NEGOCIOS    P_CONT_COMPROMISOS_FUT.R_LISTA_NEGOCIO;
+
+BEGIN
+   R_LISTA_PROCESOS.DELETE;
+   R_LISTA_NEGOCIOS.DELETE;
+   REGISTRO := 1;
+   --SS
+    OPEN C_NEGOCIOS;
+   FETCH C_NEGOCIOS INTO R_NEG;
+   WHILE C_NEGOCIOS%FOUND LOOP
+      R_LISTA_NEGOCIOS(REGISTRO).NEGOCIO := R_NEG.FON_NEG_CONSECUTIVO;
+      REGISTRO := REGISTRO + 1;
+      FETCH C_NEGOCIOS INTO R_NEG;
+   END LOOP;
+   CLOSE C_NEGOCIOS;
+
+   P_CONT_COMPROMISOS_FUT.CONT_COMPROMISOS_FUT('%',P_FECHA,PROCESO,R_LISTA_NEGOCIOS,R_LISTA_PROCESOS);
+   COMMIT;
+
+   EXCEPTION
+      WHEN OTHERS THEN
+         ROLLBACK;
+       DBMS_OUTPUT.PUT_LINE('ERROR '||SQLCODE||SQLERRM);         
+
+END ;
+
+-- VAGTUD881 - INVERSIONES INTERNACIONALES PARA FICS
+PROCEDURE P_CONTAB_INVINT_FON   (P_FECHA IN DATE)  IS
+
+   -- CURSOR QUE TRAE LOS NEGOCIOS RELACIONADOS CON LA DINAMICA DE INVERSIONES INTERNACIONALES DE FICS
+   CURSOR C_NEGOCIOS IS
+      SELECT NEG_CONSECUTIVO
+        FROM NEGOCIOS
+       WHERE EXISTS (
+             SELECT 'S'
+               FROM MVTOS_INV_INTNAL_FONDOS
+                   ,FONDOS
+              WHERE MIF_IIF_FON_CODIGO = FON_CODIGO
+                AND FON_NEG_CONSECUTIVO = NEG_CONSECUTIVO
+                AND TRUNC(MIF_FECHA) >= TRUNC(P_FECHA)
+	            AND TRUNC(MIF_FECHA) < TRUNC(P_FECHA + 1)
+                )
+          OR EXISTS (
+             SELECT 'S'
+               FROM MVTOS_OPCONTADO_INT_FONDOS
+                   ,FONDOS
+              WHERE MOF_OCI_FON_CODIGO = FON_CODIGO
+                AND FON_NEG_CONSECUTIVO = NEG_CONSECUTIVO
+                AND TRUNC(MOF_FECHA) >= TRUNC(P_FECHA)
+	            AND TRUNC(MOF_FECHA) < TRUNC(P_FECHA + 1)
+                )
+       ORDER BY NEG_CONSECUTIVO;
+
+
+   R_NEG               C_NEGOCIOS%ROWTYPE;
+   PROCESO             NUMBER;
+   REGISTRO            NUMBER;
+   R_LISTA_PROCESOS    P_CONT_INVINT.R_PROCESOS;
+   R_LISTA_NEGOCIOS    P_CONT_INVINT.R_LISTA_NEGOCIO;
+   V_NEG VARCHAR2(1);
+
+BEGIN
+   R_LISTA_PROCESOS.DELETE;
+   R_LISTA_NEGOCIOS.DELETE;
+   REGISTRO := 1;
+   V_NEG := 'N';
+   OPEN C_NEGOCIOS;
+   FETCH C_NEGOCIOS INTO R_NEG;
+   WHILE C_NEGOCIOS%FOUND LOOP
+      V_NEG := 'S';
+      R_LISTA_NEGOCIOS(REGISTRO).NEGOCIO := R_NEG.NEG_CONSECUTIVO;
+      REGISTRO := REGISTRO + 1;
+      FETCH C_NEGOCIOS INTO R_NEG;
+   END LOOP;
+   CLOSE C_NEGOCIOS;
+   IF NVL(V_NEG,'N') = 'S' THEN
+      P_CONT_INVINT.CONT_INVINT_FON('%',P_FECHA,PROCESO,R_LISTA_NEGOCIOS,R_LISTA_PROCESOS);
+   END IF;
+   COMMIT;
+
+   EXCEPTION
+      WHEN OTHERS THEN
+         ROLLBACK;
+         P_MAIL.ENVIO_MAIL_ERROR('Mail diario de verificacion P_CONTABILIZAR_DIA:'||to_char(sysdate,'dd-mm-yyyy'),
+								'Error en dinamica de InvInt Neg. : '||SQLERRM,DESTINATARIOS);
+
+END P_CONTAB_INVINT_FON;
+
+-- VAGTUD975-3 INVERSIONES EN CREDITOS - FONDOS
+PROCEDURE P_CONTAB_CREDITOS_FON (P_FECHA IN DATE) IS
+
+   -- CURSOR QUE TRAE LOS NEGOCIOS RELACIONADOS CON LA DINAMICA DE INVERSIONES INTERNACIONALES DE FICS
+   CURSOR C_NEGOCIOS IS
+      SELECT NEG_CONSECUTIVO
+        FROM NEGOCIOS
+       WHERE EXISTS
+            (SELECT 'S'
+               FROM MOVIMIENTOS_CREDITOS_FONDOS
+                   ,FONDOS
+              WHERE MCRF_ICRF_FON_CODIGO = FON_CODIGO
+                AND FON_NEG_CONSECUTIVO = NEG_CONSECUTIVO
+                AND TRUNC(MCRF_FECHA) >= TRUNC(P_FECHA)
+                AND TRUNC(MCRF_FECHA) < TRUNC(P_FECHA + 1)
+            );
+
+   R_NEG               C_NEGOCIOS%ROWTYPE;
+   PROCESO             NUMBER;
+   REGISTRO            NUMBER;
+   R_LISTA_PROCESOS    P_CONT_CREDITOS.R_PROCESOS;
+   R_LISTA_NEGOCIOS    P_CONT_CREDITOS.R_LISTA_NEGOCIO;
+   V_NEG               VARCHAR2(1);
+   P_NUM_INI           NUMBER;
+   P_NUM_FIN           NUMBER;
+
+
+BEGIN
+   P_NUM_INI := P_TOOLS.FN_REGISTRA_PROCESO_NOCTURNO('P_CONTABILIZAR_DIA.P_CONTAB_CREDITOS_FON','INI');
+   DBMS_OUTPUT.PUT_LINE('EJECUTANDO P_CONTAB_CREDITOS_FON');
+   R_LISTA_PROCESOS.DELETE;
+   R_LISTA_NEGOCIOS.DELETE;
+   REGISTRO := 1;
+   V_NEG := 'N';
+   OPEN C_NEGOCIOS;
+   FETCH C_NEGOCIOS INTO R_NEG;
+   WHILE C_NEGOCIOS%FOUND LOOP
+      DBMS_OUTPUT.PUT_LINE('NEG: '||R_NEG.NEG_CONSECUTIVO);
+      V_NEG := 'S';
+      R_LISTA_NEGOCIOS(REGISTRO).NEGOCIO := R_NEG.NEG_CONSECUTIVO;
+      REGISTRO := REGISTRO + 1;
+      FETCH C_NEGOCIOS INTO R_NEG;
+   END LOOP;
+   CLOSE C_NEGOCIOS;
+   IF NVL(V_NEG,'N') = 'S' THEN
+      DBMS_OUTPUT.PUT_LINE('LLAMANDO A P_CONT_CREDITOS '||P_FECHA);
+      P_CONT_CREDITOS.CONT_INVCRED_FON('%',P_FECHA,PROCESO,R_LISTA_NEGOCIOS,R_LISTA_PROCESOS);
+   END IF;
+   COMMIT;
+
+   P_NUM_FIN := P_TOOLS.FN_REGISTRA_PROCESO_NOCTURNO('P_CONTABILIZAR_DIA.P_CONTAB_CREDITOS_FON','FIN');
+
+EXCEPTION
+   WHEN OTHERS THEN
+      ROLLBACK;
+      P_MAIL.ENVIO_MAIL_ERROR('Mail diario de verificacion P_CONTABILIZAR_DIA:'||to_char(sysdate,'dd-mm-yyyy'),
+								'Error Dinamica Inv en Creditos : '||SQLERRM,DESTINATARIOS);
+
+END P_CONTAB_CREDITOS_FON;
+-----------------------------
+PROCEDURE P_DEP_DINAMICA_LOGS(P_NDIAS IN NUMBER DEFAULT 183) IS
+      V_MENSAJE CLOB;
+      CONN      UTL_SMTP.CONNECTION;	 
+	  N_CONT          NUMBER :=0;
+	  V_DESTINATARIOS  VARCHAR2(1000);
+      CURSOR C_LOGS IS
+         SELECT DLOG_CONSECUTIVO,
+                DLOG_TABLA,
+                DLOG_CONS_TABLA,
+                DLOG_NEGOCIO,
+                DLOG_MOV_MNEMONICO,
+                DLOG_ACCION,
+                DLOG_DESCRIPCION,
+                DLOG_USUARIO,
+                DLOG_FECHA
+           FROM DINAMICA_LOGS DL
+          WHERE DL.DLOG_FECHA < SYSDATE - NVL(P_NDIAS, 365);
+   BEGIN  
+	  V_DESTINATARIOS := 'crojas@corredores.com, aruiz@corredores.com, jmaldonado@corredores.com, evillareal@corredores.com, gerodriguezr@corredores.com';
+      V_MENSAJE := '<html><body><p>Los datos depurados por dinamicas son: <br></p><table Border="1">';
+      V_MENSAJE := V_MENSAJE ||
+                   '<tr><th>CONS</th><th>DINAMICA</th><th>CONS.DIN</th><th>NEG</th><th>MOV.MNEM</th><th>ACCION</th><th>DESCRIPCION</th><th>USUARIO</th><th>FECHA</th><tr>';
+      FOR I IN C_LOGS LOOP
+         V_MENSAJE := V_MENSAJE || '<tr>';
+         V_MENSAJE := V_MENSAJE || '<td>' || I.DLOG_CONSECUTIVO || '</td>';
+         V_MENSAJE := V_MENSAJE || '<td>' || I.DLOG_TABLA || '</td>';
+         V_MENSAJE := V_MENSAJE || '<td>' || I.DLOG_CONS_TABLA || '</td>';
+         V_MENSAJE := V_MENSAJE || '<td>' || I.DLOG_NEGOCIO || '</td>';
+         V_MENSAJE := V_MENSAJE || '<td>' || I.DLOG_MOV_MNEMONICO || '</td>';
+         V_MENSAJE := V_MENSAJE || '<td>' || I.DLOG_ACCION || '</td>';
+         V_MENSAJE := V_MENSAJE || '<td>' || I.DLOG_DESCRIPCION || '</td>';
+         V_MENSAJE := V_MENSAJE || '<td>' || I.DLOG_USUARIO || '</td>';
+         V_MENSAJE := V_MENSAJE || '<td>' || I.DLOG_FECHA || '</td>';
+         V_MENSAJE := V_MENSAJE || '</tr>';
+		 N_CONT := N_CONT+1;
+      END LOOP;
+	  IF N_CONT > 0 THEN
+      V_MENSAJE := V_MENSAJE || '</table></body></html>';
+      CONN      := P_MAIL.BEGIN_MAIL(SENDER     => 'administrador@corredores.com',
+                                     RECIPIENTS => V_DESTINATARIOS,
+                                     SUBJECT    => 'Depuracion Log de Dinamicas',
+                                     MIME_TYPE  => P_MAIL.MULTIPART_MIME_TYPE);
+
+      P_MAIL.ATTACH_TEXT(CONN => CONN, DATA => V_MENSAJE, MIME_TYPE => 'TEXT/HTML');
+      P_MAIL.END_MAIL(CONN => CONN);
+
+      DELETE FROM DINAMICA_LOGS DL WHERE DL.DLOG_FECHA < SYSDATE - NVL(P_NDIAS, 365);
+      COMMIT;
+	 END IF; 
+   EXCEPTION
+      WHEN OTHERS THEN
+         ROLLBACK;
+		 DBMS_OUTPUT.PUT_LINE('ERROR '||SQLCODE||SQLERRM);  
+   END P_DEP_DINAMICA_LOGS;
+
+END P_CONTABILIZAR_DIA;
+
+/
+
+  GRANT EXECUTE ON "PROD"."P_CONTABILIZAR_DIA" TO "NOCTURNO";

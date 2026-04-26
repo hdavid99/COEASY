@@ -1,0 +1,375 @@
+--------------------------------------------------------
+--  File created - Sunday-April-26-2026   
+--------------------------------------------------------
+--------------------------------------------------------
+--  DDL for Package P_DIVISAS
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE PACKAGE "PROD"."P_DIVISAS" IS
+
+TYPE P_CURSOR_SETFX IS REF CURSOR;
+TYPE R_CURSOR_SETFX IS REF CURSOR;
+
+TYPE REGISTRO IS RECORD (
+  SUBCUENTA      VARCHAR2(5),
+  NOMBRE         VARCHAR2(500),
+  SEMANA_ANT     NUMBER(22,2),
+  LUNES          NUMBER(22,2),
+  MARTES         NUMBER(22,2),
+  MIERCOLES      NUMBER(22,2),
+  JUEVES         NUMBER(22,2),
+  VIERNES        NUMBER(22,2),
+  SABADO         NUMBER(22,2),
+  DOMINGO        NUMBER(22,2),
+  AUTOLIQUIDA    NUMBER(22,2),
+  UNIDAD_CAPTURA VARCHAR2(5));
+TYPE T_REGISTRO IS TABLE OF REGISTRO INDEX BY BINARY_INTEGER;
+R_REGISTRO T_REGISTRO;
+TYPE REGISTRO_230 IS RECORD (
+  BUFLINE       VARCHAR2(100));
+TYPE T_REGISTRO_230 IS TABLE OF REGISTRO_230 INDEX BY BINARY_INTEGER;
+R_REGISTRO_230 T_REGISTRO_230;
+--HROSAS, VAGTUD396
+TYPE REGISTRO_2 IS RECORD (
+  SUBCUENTA    VARCHAR2(255),
+  NOMBRE       VARCHAR2(255),
+  COM_TC_0     NUMBER(22,2),
+  COM_MON_0    NUMBER(22,2),
+  VEN_TC_0     NUMBER(22,2),
+  VEN_MON_0    NUMBER(22,2),
+  COM_TC_1     NUMBER(22,2),
+  COM_MON_1    NUMBER(22,2),
+  VEN_TC_1     NUMBER(22,2),
+  VEN_MON_1    NUMBER(22,2),
+  COM_TC_2     NUMBER(22,2),
+  COM_MON_2    NUMBER(22,2),
+  VEN_TC_2     NUMBER(22,2),
+  VEN_MON_2    NUMBER(22,2),
+  COM_TC_3     NUMBER(22,2),
+  COM_MON_3    NUMBER(22,2),
+  VEN_TC_3     NUMBER(22,2),
+  VEN_MON_3    NUMBER(22,2),
+  UNIDAD_CAPTURA VARCHAR2(5));
+TYPE T_REGISTRO_2 IS TABLE OF REGISTRO_2 INDEX BY BINARY_INTEGER;
+R_REGISTRO_2 T_REGISTRO_2;
+TYPE REGISTRO_311 IS RECORD (BUFLINE VARCHAR2(100));
+TYPE T_REGISTRO_311 IS TABLE OF REGISTRO_311 INDEX BY BINARY_INTEGER;
+R_REGISTRO_311 T_REGISTRO_311;
+--FIN HROSAS
+TYPE REGISTRO_465 IS RECORD (
+  BUFLINE       VARCHAR2(100));
+TYPE T_REGISTRO_465 IS TABLE OF REGISTRO_465 INDEX BY BINARY_INTEGER;
+R_REGISTRO_465 T_REGISTRO_465;
+
+TYPE REGISTRO_AUNO IS RECORD (BUFLINE VARCHAR2(500));
+TYPE T_REGISTRO_AUNO IS TABLE OF REGISTRO_AUNO INDEX BY BINARY_INTEGER;
+R_REGISTRO_AUNO T_REGISTRO_AUNO;
+
+TYPE REGISTRO_ADOS IS RECORD (BUFLINE VARCHAR2(3000));
+TYPE T_REGISTRO_ADOS IS TABLE OF REGISTRO_ADOS INDEX BY BINARY_INTEGER;
+R_REGISTRO_ADOS T_REGISTRO_ADOS;
+
+TYPE ORDENES_CON IS RECORD (
+  ORD_CONSECUTIVO NUMBER(8),
+  ORD_SUC_CODIGO  NUMBER(5)
+);
+
+TYPE T_ORDENES_CON IS TABLE OF ORDENES_CON INDEX BY BINARY_INTEGER;
+
+TYPE TYPE_DECLARACION IS RECORD (
+  ORD_CONSECUTIVO           NUMBER(8),
+  ORD_SUC_CODIGO            NUMBER(5),
+  DCA_NUMERO_DECLARACION    NUMBER(7),
+  FORMULARIO                NUMBER(1),
+  CLN_TIPO_MOVIMIENTO       VARCHAR2(3),
+  CLN_NUM_NUMERO            NUMBER(4),
+  VALOR                     NUMBER(22,2),
+  VALOR_USD                 NUMBER(22,2),
+  TIPO_CAMBIO               NUMBER(30,16)
+);
+
+TYPE T_TYPE_DECLARACION IS TABLE OF TYPE_DECLARACION INDEX BY BINARY_INTEGER;
+R_TYPE_DECLARACION T_TYPE_DECLARACION;
+
+TYPE TYPE_BENEFICIARIO IS RECORD (
+  TAE_CONSECUTIVO       NUMBER,
+  ORD_CONSECUTIVO       NUMBER(8),
+  ORD_SUC_CODIGO        NUMBER(5)
+);
+
+TYPE T_TYPE_BENEFICIARIO IS TABLE OF TYPE_BENEFICIARIO INDEX BY BINARY_INTEGER;
+R_TYPE_BENEFICIARIO T_TYPE_BENEFICIARIO;
+
+
+PROCEDURE RECALCULO_SALDOS_CLIENTES;
+PROCEDURE P_SUBCUENTA_EN_CEROS(P_CONN     IN OUT utl_smtp.connection
+                            ,P_UC       VARCHAR2
+                            ,P_SC       VARCHAR2
+                            ,P_SIGNO    VARCHAR2
+                            ,P_COL      VARCHAR2
+                            ,P_CONSECU  IN OUT NUMBER
+                            ,P_REGISTRO_230 IN OUT T_REGISTRO_230);
+PROCEDURE P_MAIL_FORMATO_230(P_FECHA DATE DEFAULT NULL,P_LLAMADO_REPORTE VARCHAR2  DEFAULT NULL,P_REGISTRO_230 IN OUT T_REGISTRO_230);
+PROCEDURE P_MAIL_EXCEL_230(P_FECHA DATE DEFAULT NULL,P_LLAMADO_REPORTE VARCHAR2  DEFAULT NULL,P_REGISTRO IN OUT T_REGISTRO);
+PROCEDURE P_PLANTILLA_230(P_REGISTRO IN OUT T_REGISTRO);
+PROCEDURE P_ESCRIBE_PLANTILLA_230(P_REGISTRO        IN OUT T_REGISTRO,
+                                  P_UNIDAD_CAPTURA  VARCHAR2,
+                                  P_SUBCUENTA       VARCHAR2,
+                                  P_DIA             VARCHAR2,
+                                  P_VALOR           NUMBER);
+PROCEDURE P_GENERA_MAIL_EXCEL_230( P_REGISTRO        IN OUT T_REGISTRO,
+                             P_FECHA_DIA_CORTE DATE,
+                             P_FECHA_PROCESO   DATE,
+                             P_FECHA_INICIAL   DATE,
+                             P_FECHA_FINAL     DATE);
+PROCEDURE P_ESCRIBE_FORMATO_230(P_REGISTRO_230  IN OUT T_REGISTRO_230,
+                                P_BUFLINE       VARCHAR2);
+PROCEDURE P_GENERA_MAIL_230( P_REGISTRO_230    IN OUT T_REGISTRO_230,
+                             P_FECHA_DIA_CORTE DATE,
+                             P_FECHA_PROCESO   DATE,
+                             P_FECHA_INICIAL   DATE,
+                             P_FECHA_FINAL     DATE);
+PROCEDURE P_MAIL_FORMATO_465(P_FECHA DATE DEFAULT NULL,P_LLAMADO_REPORTE VARCHAR2  DEFAULT NULL,P_REGISTRO_465 IN OUT T_REGISTRO_465);
+PROCEDURE P_ESCRIBE_FORMATO_465(P_REGISTRO_465  IN OUT T_REGISTRO_465,
+                                P_BUFLINE       VARCHAR2);
+PROCEDURE P_GENERA_MAIL_465( P_REGISTRO_465    IN OUT T_REGISTRO_465,
+                             P_FECHA_DIA_CORTE DATE,
+                             P_FECHA_PROCESO   DATE,
+                             P_FECHA_INICIAL   DATE,
+                             P_FECHA_FINAL     DATE);
+FUNCTION F_DIA_HABIL_SEMANA(P_FECHA DATE) RETURN DATE;
+FUNCTION F_SIGNO(VALOR NUMBER) RETURN VARCHAR2;
+FUNCTION DIA_DE_LA_SEMANA(P_FECHA DATE) RETURN VARCHAR2;
+FUNCTION F_DIA_DATOS (P_FECHA DATE) RETURN DATE;
+PROCEDURE P_MAIL_DECLARACIONES_CAMBIO
+   (P_FECHA_INI   DATE
+   ,P_FECHA_FIN   DATE);
+-- -----------------------------------------------------------------------------
+/* Autor:       COSORIO
+   Fecha:       05-ENE-2010
+   Descripción: Ejecuta inserción de registros del archivo de respuesta del Banco de la República. */
+--
+PROCEDURE INSERTA_INFORME_BR(P_FECHA_TRANSMISION     IN INFORMES_BR_DECLARACIONES_IMC.IBR_FECHA_TRANSMISION%TYPE
+                            ,P_HORA_TRANSMISION      IN INFORMES_BR_DECLARACIONES_IMC.IBR_HORA_TRANSMISION%TYPE
+                            ,P_USUARIO               IN INFORMES_BR_DECLARACIONES_IMC.IBR_USUARIO%TYPE
+                            ,P_ARCHIVO               IN INFORMES_BR_DECLARACIONES_IMC.IBR_ARCHIVO%TYPE
+                            ,P_OPERACION             IN INFORMES_BR_DECLARACIONES_IMC.IBR_OPERACION%TYPE
+                            ,P_FORMULARIO            IN INFORMES_BR_DECLARACIONES_IMC.IBR_FORMULARIO%TYPE
+                            ,P_FECHA                 IN INFORMES_BR_DECLARACIONES_IMC.IBR_FECHA%TYPE
+                            ,P_NUMERO                IN INFORMES_BR_DECLARACIONES_IMC.IBR_NUMERO%TYPE
+                            ,P_VALOR_USD             IN INFORMES_BR_DECLARACIONES_IMC.IBR_VALOR_USD%TYPE
+                            ,P_RESULTADO_INTEGRACION IN INFORMES_BR_DECLARACIONES_IMC.IBR_RESULTADO_INTEGRACION%TYPE
+                            ,P_ERROR_MENSAJE         IN INFORMES_BR_DECLARACIONES_IMC.IBR_ERROR_MENSAJE%TYPE);
+-- -----------------------------------------------------------------------------
+--HROSAS, VAGTUD396
+PROCEDURE PR_MAIL_EXCEL_311(P_FECHA_1 DATE DEFAULT NULL
+                           ,P_FECHA_2 DATE DEFAULT NULL
+                           ,P_REGISTRO IN OUT T_REGISTRO_2);
+
+PROCEDURE PR_PLANTILLA_311(P_REGISTRO IN OUT T_REGISTRO_2);
+
+PROCEDURE PR_ESCRIBE_PLANTILLA_311(P_REGISTRO        IN OUT T_REGISTRO_2,
+                                  P_UNIDAD_CAPTURA  VARCHAR2,
+                                  P_SUBCUENTA       VARCHAR2,
+                                  P_T               VARCHAR2,
+                                  P_VALOR_1         NUMBER,
+                                  P_VALOR_2         NUMBER);
+
+--FIN HROSAS
+
+---------PROCEDIMIENTOS Y FUNCIONES PARA INTREGRACION CODIVISAS-------
+PROCEDURE P_COLOCAR_ORDEN_DIV  (P_IDCODIVISAS          IN NUMBER,
+                                P_CLI_TID_CODIGO       IN VARCHAR2,
+                                P_CLI_NUM_IDEN         IN VARCHAR2,
+                                P_CUENTA_CORREDORES    IN NUMBER,
+                                P_PER_NUN_IDEN         IN VARCHAR,
+                                P_TID_CODIGO           IN VARCHAR2,
+                                P_USUARIO_COLOCA       IN VARCHAR2,
+                                P_BMO_MNEMONICO        IN VARCHAR2 DEFAULT 'DOLAR',
+                                P_TIPO_ORDEN           IN VARCHAR2,
+                                P_ORIGEN_OPERACION     IN VARCHAR2,
+                                P_TIPO_MOVIMIENTO      IN VARCHAR2,
+                                P_VALOR_DOLARES        IN NUMBER,
+                                P_TASA_NEGOCIACION     IN NUMBER,
+                                P_VALORMONEDAFX        IN NUMBER,
+                                P_BMOFX                IN VARCHAR2,
+                                P_TASA_CONVERSIONFX    IN NUMBER,
+                                P_VALOR_PESOS          IN NUMBER,
+                                P_GASTOS_ENVIO         IN NUMBER,
+                                P_IVA_GASTOS_ENVIO     IN NUMBER,
+                                P_VALOR_RETEFUENTE     IN NUMBER,
+                                P_IVA_VENTA            IN NUMBER,
+                                P_VALOR_PESOS_NETOS    IN NUMBER,
+                                P_TASA_NEGOCIO_NETA    IN NUMBER,
+                                P_TODO_COSTO           IN VARCHAR2,
+                                P_CARGO_CUENTA         IN VARCHAR2,
+                                P_MONTO_CARGO_CUENTA   IN NUMBER,
+                                P_CARGO_USD_CLIENTE    IN VARCHAR2,
+                                P_CARGO_CUENTA_INVEXT  IN VARCHAR2,
+                                P_TERMINAL_OPERACION   IN VARCHAR2,
+                                P_NEXT_DAY             IN NUMBER,
+                                P_FECHA_CUM_NEXT_DAY   IN VARCHAR2,
+                                P_MEDIO_RECEPCION      IN VARCHAR2,
+                                P_HORA_RECEPCION       IN VARCHAR2,
+                                P_DETALLE_RECEPCION    IN VARCHAR,
+                                P_EXECENTO_RETENCION   IN VARCHAR2,
+                                P_POSICION_PROPIA      IN VARCHAR2,
+                                P_TASA_NEG_MESA        IN NUMBER,
+                                P_PORCENTAJE_MESA      IN NUMBER,
+                                P_PORCENTAJE_COMERCIAL IN NUMBER,
+                                P_MARGEN_COMISION      IN NUMBER,
+                                P_ID_ORDEN             OUT NUMBER,
+                                P_CLOB                 OUT CLOB);
+
+PROCEDURE P_ANULAR_ORDEN_DIVISAS(P_TIPO_ORDEN   IN VARCHAR2,
+                                 P_ID_ORDEN     IN NUMBER,
+                                 P_USUARIO      IN VARCHAR2,
+                                 P_TERMINAL     IN VARCHAR2,
+                                 P_ERRORES      IN OUT NUMBER);
+
+---- PROCEDIMIENTO PARA CONTROLES EN LINEA------------------
+PROCEDURE P_NOTIFICA_OPERACION_DIV( P_ID_ORDEN            IN NUMBER,
+                                    P_TIPO                IN VARCHAR2,
+                                    P_INTERBANCARIO       IN VARCHAR2,
+                                    P_VALOR_DOLARES       IN NUMBER,
+                                    P_TASA                IN NUMBER,
+                                    P_USUARIO             IN VARCHAR2,
+                                    P_PER_NUM_IDEN        IN VARCHAR2,
+                                    P_PER_TID_CODIGO      IN VARCHAR2,
+                                    P_CLI_PER_NUM_IDEN    IN VARCHAR2,
+                                    P_CLI_PER_TID_COD     IN VARCHAR2,
+                                    P_NEXT_DAY            IN VARCHAR2,
+                                    P_ORIGEN_OPERACION    IN VARCHAR2,
+                                    P_ESTADO_ORD_DIV      IN VARCHAR2,
+                                    P_MONEDA_FX           IN VARCHAR2,
+                                    P_FECHA_CUMP_NEXTDAY  IN VARCHAR,
+                                    P_CODIGO_CONTRAPARTE  IN VARCHAR2,
+                                    P_LLAMADO             IN VARCHAR2 DEFAULT NULL,
+                                    P_ERRORES             IN OUT NUMBER);
+
+FUNCTION CALCULAR_FECHA_CUMPLIMIENTO(P_FECHA DATE) RETURN DATE;
+
+--- PROCEDIMIENTO DE CREACION DE REGISTRO EN PAGOS DIVISAS
+PROCEDURE P_INSERTA_PADI(P_MONTO	                IN NUMBER
+                        ,P_ANULADO	              IN VARCHAR2
+                        ,P_ODP_CONSECUTIVO	      IN NUMBER DEFAULT NULL
+                        ,P_ODP_SUC_CODIGO	        IN NUMBER DEFAULT NULL
+                        ,P_ODP_NEG_CONSECUTIVO	  IN NUMBER DEFAULT NULL
+                        ,P_MCC_CONSECUTIVO	      IN NUMBER DEFAULT NULL
+                        ,P_MCC_MCC_CONSECUTIVO	  IN NUMBER DEFAULT NULL
+                        ,P_DAA_CONSECUTIVO	      IN NUMBER DEFAULT NULL
+                        ,P_DAA_SUC_CODIGO	        IN NUMBER DEFAULT NULL
+                        ,P_DAA_NEG_CONSECUTIVO	  IN NUMBER DEFAULT NULL
+                        ,P_DPA_CONSECUTIVO        IN NUMBER DEFAULT NULL);
+PROCEDURE PR_FORMATO_AUNO(P_FECHA DATE DEFAULT NULL,
+                               P_LLAMADO_REPORTE VARCHAR2  DEFAULT NULL,
+                               P_REGISTRO_AUNO IN OUT T_REGISTRO_AUNO);
+
+PROCEDURE PR_ESCRIBE_FORMATO_AUNO(P_REGISTRO_AUNO  IN OUT T_REGISTRO_AUNO,
+                                  P_BUFLINE       VARCHAR2);
+
+PROCEDURE PR_FORMATO_ADOS(P_FECHA DATE DEFAULT NULL,
+                          P_LLAMADO_REPORTE VARCHAR2  DEFAULT NULL,
+                          P_REGISTRO_ADOS IN OUT T_REGISTRO_ADOS);
+
+TYPE O_CURSOR IS REF CURSOR;
+PROCEDURE PR_VALOR_BALANCE (P_TIPO VARCHAR2,
+                            P_FECHA DATE,
+                            P_CUENTAS VARCHAR2,
+                            P_VALOR IN OUT NUMBER);
+
+PROCEDURE PR_ESCRIBE_FORMATO_ADOS(P_REGISTRO_ADOS  IN OUT T_REGISTRO_ADOS,
+                                  P_BUFLINE       VARCHAR2);
+
+PROCEDURE PR_TITULOS_POSICION_CORTOS (P_FECHA DATE);
+
+PROCEDURE PR_VALOR_CORTOS (P_FECHA IN DATE , P_VALOR_CORTOS IN OUT NUMBER);
+
+PROCEDURE PR_ORDENES_SETFX_PORREGISTRAR (P_FECHA DATE,P_SETFX_PREGISTRAR IN OUT P_CURSOR_SETFX);
+
+PROCEDURE PR_ESTADO_ORDEN_DIV_SETFX(P_ORD_SUC_CODIGO NUMBER, P_ORD_CONSECUTIVO NUMBER,P_RESPUESTA IN OUT VARCHAR2);
+
+
+PROCEDURE PR_ANULAR_ORDEN_DIVISAS_CON(P_SUC_CODIGO           ORDENES_DIVISAS.ORD_SUC_CODIGO%TYPE,
+                                      P_CONSECUTIVO          ORDENES_DIVISAS.ORD_CONSECUTIVO%TYPE,
+                                      P_ORD_ORD_CONSECUTIVO  ORDENES_DIVISAS.ORD_ORD_CONSECUTIVO%TYPE);
+
+
+PROCEDURE PR_CONSOLIDA_ORDENES(P_ORD_CONSOLIDAR           IN  T_ORDENES_CON,
+                               P_VALOR_DOLARES_FX         OUT ORDENES_DIVISAS.ORD_VALOR_FX%TYPE,
+                               P_VALOR_DOLARES            OUT ORDENES_DIVISAS.ORD_VALOR_DOLARES%TYPE,
+                               P_VALOR_PESOS              OUT ORDENES_DIVISAS.ORD_VALOR_PESOS%TYPE,
+                               P_VALOR_PESOS_MESA         OUT ORDENES_DIVISAS.ORD_VALOR_PESOS%TYPE,
+                               P_TASA_CAMBIO              OUT ORDENES_DIVISAS.ORD_TASA_CAMBIO%TYPE,
+                               P_TASA_CAMBIO_MESA         OUT ORDENES_DIVISAS.ORD_TASA_NEG_MESA%TYPE,
+                               P_ORD_TIPO_CAMBIO          OUT ORDENES_DIVISAS.ORD_TIPO_CAMBIO%TYPE);
+
+PROCEDURE PR_ENVIO_MAIL_CAUSACION;
+
+PROCEDURE PR_ENVIO_MAIL_FACTURACION;
+
+PROCEDURE PR_VALIDAR_COM_UIAF;
+
+PROCEDURE  PR_ACTUALIZAR_ESTADO(P_CONSECUTIVO NUMBER,
+                                P_ESTADO VARCHAR2,
+                                P_OBSERVACIONES VARCHAR2) ;
+
+
+PROCEDURE PR_CARGUE_COM_UIAF(P_TERMINAL_COMPLEMENTA  VARCHAR2,
+                             P_USUARIO_COMPLEMENTA   VARCHAR2,
+                             P_FECHA_COMPLEMENTA     DATE,
+                             P_BEX_MNEMONICO         VARCHAR2);
+
+
+PROCEDURE PR_ESCRIBE_TYPE_DECLARACION(P_TYPE_DECLARACION            IN OUT T_TYPE_DECLARACION,
+                                     P_DECLARACIONES_CAMBIO        DECLARACIONES_CAMBIO%ROWTYPE,
+                                     P_CLASIFICACIONES_NUMERALES   CLASIFICACIONES_NUMERALES%ROWTYPE,
+                                     P_VALOR                       BENEFICIARIOS_FORMULARIO_UNO.BFU_VALOR%TYPE,
+                                     P_VALOR_USD                   ORDENES_DIVISAS.ORD_VALOR_DOLARES%TYPE,
+                                     P_TIPO_CAMBIO                 ORDENES_DIVISAS.ORD_TIPO_CAMBIO%TYPE);
+
+
+PROCEDURE PR_ESCRIBE_TYPE_BENEFICIARIO(P_TYPE_BENEFICIARIO    IN OUT T_TYPE_BENEFICIARIO,
+                                      P_TAE_CONSECUTIVO      TMP_CARGUES_BENEFICARIOS.TAE_CONSECUTIVO%TYPE,
+                                      P_ORD_SUC_CODIGO       ORDENES_DIVISAS.ORD_SUC_CODIGO%TYPE,
+                                      P_ORD_CONSECUTIVO      ORDENES_DIVISAS.ORD_CONSECUTIVO%TYPE);
+
+PROCEDURE PR_CREAR_BENEFICIARIOS(P_FORMULARIO        DECLARACIONES_CAMBIO.DCA_FORMULARIO%TYPE,
+                                P_BENEFICIARIOS     BENEFICIARIOS_FORMULARIO_UNO%ROWTYPE);
+
+PROCEDURE PR_CREAR_BENEFICIARIOS_1(P_FORMULARIO 	NUMBER,
+																	P_BENEFICIARIOS BENEFICIARIOS_FORMULARIO_UIAF%ROWTYPE);
+
+FUNCTION FN_CIUDAD_PAISES(P_DATO VARCHAR2) RETURN VARCHAR2;
+
+FUNCTION FN_VALIDA_CARGUE_COM_BEN RETURN BOOLEAN;
+
+PROCEDURE PR_REVERSAR_CARGUE_COM_BEN(P_FECHA DATE DEFAULT NULL);
+
+PROCEDURE PR_ENVIO_MAIL_COMPLEMENTACION;
+
+PROCEDURE P_CONSULTAR_ORDENES(P_ORD_TIPO_ORDEN ORDENES_DIVISAS.ORD_TIPO_ORDEN%TYPE,
+						 P_ORD_FECHA_COLOCACION VARCHAR2,
+						 P_ORD_FIRMA_DELEGADA ORDENES_DIVISAS.ORD_FIRMA_DELEGADA%TYPE DEFAULT NULL,
+						 io_cursor IN OUT O_CURSOR);
+
+FUNCTION PR_VALOR_FILIAL(P_FECHA DATE) RETURN NUMBER; -- SORTIZ INVERSIONES FILIALES
+  -- OMORA ARBITRAJE INTERNACIONAL PP
+   PROCEDURE PR_INSERTA_MOV_BAN_EXTERIOR(P_BEX_MNEMONICO         MOVIMIENTOS_BANCARIOS_EXTERIOR.MBE_CBE_BEX_MNEMONICO%TYPE
+                                        ,P_NUMERO_CUENTA         MOVIMIENTOS_BANCARIOS_EXTERIOR.MBE_CBE_NUMERO_CUENTA%TYPE
+                                        ,P_TME_MNEMONICO         MOVIMIENTOS_BANCARIOS_EXTERIOR.MBE_TME_MNEMONICO%TYPE
+                                        ,P_MONTO                 MOVIMIENTOS_BANCARIOS_EXTERIOR.MBE_MONTO%TYPE
+                                        ,P_CONCILIADO            MOVIMIENTOS_BANCARIOS_EXTERIOR.MBE_CONCILIADO%TYPE
+                                        ,P_DETALLE               MOVIMIENTOS_BANCARIOS_EXTERIOR.MBE_DETALLE%TYPE
+                                        ,P_CONTROL_TRANSFERENCIA MOVIMIENTOS_BANCARIOS_EXTERIOR.MBE_CONTROL_TRANSFERENCIA%TYPE
+                                        ,P_NUMERO_OPERACION      MOVIMIENTOS_BANCARIOS_EXTERIOR.MBE_OCI_NUMERO_OPERACION%TYPE
+                                        ,P_FON_CODIGO            MOVIMIENTOS_BANCARIOS_EXTERIOR.MBE_OCI_FON_CODIGO%TYPE
+                                        ,P_ERROR                 OUT VARCHAR2
+                                        ,P_RESPUESTA             OUT VARCHAR2);
+
+END P_DIVISAS;
+
+/
+
+  GRANT EXECUTE ON "PROD"."P_DIVISAS" TO "COE_RECURSOS";
+  GRANT EXECUTE ON "PROD"."P_DIVISAS" TO "RESOURCE";
