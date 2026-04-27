@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<!-- saved from url=(0076)file:///D:/Documents/Git/COEASY/docs/standards/Est%C3%A1ndar_PLSQL_CORE.html -->
+<html lang="es"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estándar Oracle / PL/SQL — Guía Visual v2</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  :root{
+    --bg:#f5f4f0;--surface:#ffffff;--surface2:#f0efe9;--border:#e0ddd5;
+    --text:#1a1918;--muted:#6b6962;--light:#a09e98;
+    --must:#c0392b;--must-bg:#fdf0ee;--must-border:#f5c0ba;
+    --should:#b7770d;--should-bg:#fef9ed;
+    --may:#1e7e6e;--may-bg:#edfaf5;
+    --accent:#2d5fa0;--accent-bg:#edf3fc;
+    --purple:#6f42c1;--purple-bg:#f4f0fc;
+    --green:#1e7e6e;--green-bg:#edfaf5;
+    --amber:#b7770d;--amber-bg:#fef9ed;
+    --tag-bg:#e8e7e1;
+    --code-bg:#1a1918;--code-fg:#d4d0c8;
+  }
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;}
+
+  /* HEADER */
+  .header{background:var(--text);color:#fff;padding:2.5rem 2rem 2rem;position:relative;overflow:hidden;}
+  .header::before{content:'PL/SQL';position:absolute;right:-20px;top:-20px;font-size:140px;font-weight:600;color:rgba(255,255,255,0.04);letter-spacing:-6px;line-height:1;pointer-events:none;}
+  .header h1{font-size:24px;font-weight:600;letter-spacing:-0.5px;}
+  .header p{font-size:13px;color:rgba(255,255,255,0.55);margin-top:4px;}
+  .header-badges{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;}
+  .badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:500;letter-spacing:0.3px;}
+  .badge-must{background:var(--must);color:#fff;}
+  .badge-should{background:var(--should);color:#fff;}
+  .badge-may{background:var(--may);color:#fff;}
+  .badge-new{background:#4a3080;color:#fff;}
+
+  /* NAV */
+  .nav-wrap{background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+  .nav{display:flex;overflow-x:auto;scrollbar-width:none;}
+  .nav::-webkit-scrollbar{display:none;}
+  .nav-btn{padding:14px 18px;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-size:12.5px;font-weight:500;color:var(--muted);white-space:nowrap;transition:all .15s;font-family:inherit;}
+  .nav-btn:hover{color:var(--text);}
+  .nav-btn.active{color:var(--text);border-bottom-color:var(--text);}
+  .nav-btn .new-dot{display:inline-block;width:6px;height:6px;background:#4a3080;border-radius:50%;margin-left:5px;vertical-align:middle;}
+
+  /* SECTIONS */
+  .section{display:none;padding:2rem;max-width:960px;margin:0 auto;}
+  .section.active{display:block;}
+  h2{font-size:20px;font-weight:600;margin-bottom:4px;letter-spacing:-0.3px;}
+  h3{font-size:14px;font-weight:600;margin-bottom:12px;}
+  .section-desc{color:var(--muted);font-size:13px;margin-bottom:2rem;}
+  .section-title-row{display:flex;align-items:center;gap:12px;margin-bottom:6px;}
+  .section-num{background:var(--text);color:#fff;width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;}
+
+  /* RULE CARD */
+  .rule-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:12px;overflow:hidden;}
+  .rule-card-head{display:flex;align-items:center;gap:10px;padding:14px 16px;cursor:pointer;user-select:none;}
+  .rule-card-head:hover{background:var(--surface2);}
+  .rule-tag{padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600;letter-spacing:0.8px;flex-shrink:0;}
+  .tag-must{background:var(--must-bg);color:var(--must);}
+  .tag-should{background:var(--should-bg);color:var(--should);}
+  .tag-may{background:var(--may-bg);color:var(--may);}
+  .tag-info{background:var(--accent-bg);color:var(--accent);}
+  .rule-title{font-weight:500;font-size:13px;flex:1;}
+  .rule-chevron{color:var(--muted);font-size:12px;transition:transform .2s;}
+  .rule-card.open .rule-chevron{transform:rotate(180deg);}
+  .rule-body{display:none;padding:0 16px 16px;border-top:1px solid var(--border);font-size:13px;color:var(--muted);line-height:1.7;}
+  .rule-card.open .rule-body{display:block;}
+
+  /* CODE */
+  pre{background:var(--code-bg);color:var(--code-fg);border-radius:8px;padding:14px 16px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.65;margin:12px 0 4px;}
+  .kw{color:#89b4e8;}.fn{color:#e8c07d;}.cm{color:#6a6560;font-style:italic;}.str{color:#a8cc8c;}.num{color:#d4986b;}.tp{color:#c3a6f0;}.hl{background:rgba(255,220,100,0.12);display:block;}
+
+  /* INFO BOXES */
+  .info-box{border-left:3px solid var(--accent);background:var(--accent-bg);border-radius:0 8px 8px 0;padding:12px 14px;margin:12px 0;font-size:12.5px;color:#1e3f7a;line-height:1.6;}
+  .warn-box{border-left:3px solid var(--must);background:var(--must-bg);border-radius:0 8px 8px 0;padding:12px 14px;margin:12px 0;font-size:12.5px;color:#7a1e1e;line-height:1.6;}
+  .tip-box{border-left:3px solid var(--green);background:var(--green-bg);border-radius:0 8px 8px 0;padding:12px 14px;margin:12px 0;font-size:12.5px;color:#0b4f42;line-height:1.6;}
+
+  /* GRID */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:1rem 0;}
+  @media(max-width:640px){.grid2{grid-template-columns:1fr;}}
+  .mini-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;}
+  .mini-card h4{font-size:12px;font-weight:600;margin-bottom:8px;}
+
+  /* TABLES */
+  .naming-table{width:100%;border-collapse:collapse;background:var(--surface);border-radius:10px;overflow:hidden;border:1px solid var(--border);margin:1rem 0;}
+  .naming-table th{background:var(--surface2);padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:0.5px;text-transform:uppercase;}
+  .naming-table td{padding:10px 14px;border-top:1px solid var(--border);font-size:12px;vertical-align:top;}
+  .naming-table tr:hover td{background:var(--surface2);}
+  .mono{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--accent);}
+
+  /* PREFIX */
+  .prefix-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin:1.5rem 0;}
+  .prefix-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;align-items:flex-start;gap:10px;}
+  .prefix-tag{background:var(--text);color:#fff;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:500;padding:4px 8px;border-radius:4px;flex-shrink:0;}
+  .prefix-info{flex:1;}
+  .prefix-name{font-weight:500;font-size:12px;}
+  .prefix-ex{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:2px;}
+
+  /* FLOW */
+  .flow{display:flex;flex-direction:column;gap:0;margin:1.5rem 0;}
+  .flow-step{display:flex;gap:12px;align-items:flex-start;}
+  .flow-left{display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:32px;}
+  .flow-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;}
+  .dot-start{background:var(--accent-bg);color:var(--accent);border:1.5px solid var(--accent);}
+  .dot-i{background:var(--may-bg);color:var(--may);border:1.5px solid var(--may);}
+  .dot-t{background:var(--purple-bg);color:var(--purple);border:1.5px dashed var(--purple);}
+  .dot-f{background:var(--may-bg);color:var(--may);border:1.5px solid var(--may);}
+  .dot-e{background:var(--must-bg);color:var(--must);border:1.5px solid var(--must);}
+  .flow-line{width:2px;flex:1;min-height:24px;background:var(--border);margin:4px 0;}
+  .flow-content{padding:4px 0 20px;flex:1;}
+  .flow-label{font-weight:600;font-size:13px;margin-bottom:2px;}
+  .flow-sub{font-size:12px;color:var(--muted);}
+
+  /* ORDER LIST */
+  .order-list{list-style:none;margin:8px 0;}
+  .order-list li{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12.5px;}
+  .order-list li:last-child{border-bottom:none;}
+  .order-num{width:22px;height:22px;border-radius:50%;background:var(--tag-bg);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0;color:var(--muted);}
+
+  /* PATTERNS */
+  .pattern-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px;}
+  .pattern-label{font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;}
+  .pattern-val{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--accent);font-weight:500;}
+  .pattern-ex{font-size:11px;color:var(--muted);margin-top:2px;}
+  .divider{border:none;border-top:1px solid var(--border);margin:2rem 0;}
+
+  /* ═══════════════════════════════ */
+  /* STEPPER (paso a paso)           */
+  /* ═══════════════════════════════ */
+  .stepper-nav{display:flex;align-items:center;gap:0;margin-bottom:2rem;overflow-x:auto;padding-bottom:4px;}
+  .step-pip{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;min-width:60px;}
+  .step-circle{width:32px;height:32px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--muted);background:var(--surface);transition:all .2s;}
+  .step-pip.active .step-circle{border-color:var(--text);background:var(--text);color:#fff;}
+  .step-pip.done .step-circle{border-color:var(--green);background:var(--green-bg);color:var(--green);}
+  .step-label{font-size:10px;color:var(--muted);text-align:center;max-width:60px;line-height:1.3;}
+  .step-pip.active .step-label{color:var(--text);font-weight:500;}
+  .step-connector{flex:1;height:2px;background:var(--border);margin-bottom:16px;min-width:12px;}
+  .step-connector.done{background:var(--green);}
+
+  .stepper-panel{display:none;}
+  .stepper-panel.active{display:block;}
+
+  .step-header{display:flex;align-items:flex-start;gap:14px;margin-bottom:1.5rem;}
+  .step-num-big{width:44px;height:44px;border-radius:10px;background:var(--text);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;flex-shrink:0;}
+  .step-title{font-size:17px;font-weight:600;margin-bottom:4px;}
+  .step-subtitle{font-size:13px;color:var(--muted);}
+
+  .step-btns{display:flex;gap:10px;margin-top:1.5rem;}
+  .btn{padding:8px 18px;border-radius:6px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:13px;font-weight:500;color:var(--text);font-family:inherit;transition:all .15s;}
+  .btn:hover{background:var(--surface2);}
+  .btn-primary{background:var(--text);color:#fff;border-color:var(--text);}
+  .btn-primary:hover{opacity:0.85;}
+
+  /* CODE DIFF */
+  .code-diff{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:1rem 0;}
+  @media(max-width:640px){.code-diff{grid-template-columns:1fr;}}
+  .diff-label{font-size:11px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;padding:6px 12px;border-radius:6px 6px 0 0;margin-bottom:0;}
+  .diff-bad{background:var(--must-bg);color:var(--must);}
+  .diff-good{background:var(--may-bg);color:var(--may);}
+  .diff-bad + pre{border-top-left-radius:0;border-top-right-radius:0;border-top:2px solid #f5c0ba;}
+  .diff-good + pre{border-top-left-radius:0;border-top-right-radius:0;border-top:2px solid #9fe1cb;}
+
+  /* ═══════════════════════════════ */
+  /* EN MI PROYECTO                  */
+  /* ═══════════════════════════════ */
+  .consider-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:14px;}
+  .consider-card h4{font-size:14px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+  .consider-num{width:24px;height:24px;border-radius:6px;background:var(--surface2);color:var(--text);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .consider-body{font-size:13px;color:var(--muted);line-height:1.7;}
+
+  .mistake-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin:1rem 0;}
+  .mistake-card{background:var(--must-bg);border:1px solid var(--must-border);border-radius:8px;padding:14px;}
+  .mistake-card .mc-title{font-size:12px;font-weight:600;color:var(--must);margin-bottom:6px;}
+  .mistake-card .mc-body{font-size:12px;color:#6b2020;line-height:1.6;}
+  .fix-card{background:var(--green-bg);border:1px solid #9fe1cb;border-radius:8px;padding:14px;}
+  .fix-card .mc-title{font-size:12px;font-weight:600;color:var(--green);margin-bottom:6px;}
+  .fix-card .mc-body{font-size:12px;color:#0b4f42;line-height:1.6;}
+
+  /* ═══════════════════════════════ */
+  /* CHECKLIST                       */
+  /* ═══════════════════════════════ */
+  .progress-bar-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:1.5rem;}
+  .progress-bar-row{display:flex;align-items:center;gap:12px;margin-bottom:8px;}
+  .progress-fraction{font-size:20px;font-weight:600;}
+  .progress-label{font-size:13px;color:var(--muted);}
+  .progress-track{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;}
+  .progress-fill{height:100%;background:var(--green);border-radius:3px;transition:width .3s;}
+
+  .checklist-group{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:12px;}
+  .checklist-group-head{padding:12px 16px;background:var(--surface2);font-size:12px;font-weight:600;color:var(--muted);letter-spacing:0.5px;text-transform:uppercase;border-bottom:1px solid var(--border);}
+  .checklist-item{display:flex;align-items:flex-start;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s;}
+  .checklist-item:last-child{border-bottom:none;}
+  .checklist-item:hover{background:var(--surface2);}
+  .checklist-item.checked{opacity:0.6;}
+  .chk-box{width:18px;height:18px;border-radius:4px;border:1.5px solid var(--border);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+  .checklist-item.checked .chk-box{background:var(--green);border-color:var(--green);color:#fff;}
+  .chk-must{border-color:var(--must-border);}
+  .checklist-item.checked .chk-must{background:var(--green);border-color:var(--green);}
+  .chk-text{flex:1;}
+  .chk-title{font-size:13px;font-weight:500;}
+  .checklist-item.checked .chk-title{text-decoration:line-through;color:var(--muted);}
+  .chk-sub{font-size:11.5px;color:var(--muted);margin-top:2px;}
+  .chk-tag{font-size:10px;font-weight:600;padding:2px 6px;border-radius:3px;letter-spacing:0.5px;flex-shrink:0;}
+  .chk-tag-must{background:var(--must-bg);color:var(--must);}
+  .chk-tag-should{background:var(--should-bg);color:var(--should);}
+
+  .reset-btn{font-size:12px;color:var(--muted);cursor:pointer;background:none;border:none;font-family:inherit;text-decoration:underline;padding:0;}
+  .reset-btn:hover{color:var(--text);}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <h1>Estándar Oracle / PL/SQL</h1>
+  <p>Guía visual de convenciones, trazabilidad y calidad técnica del equipo</p>
+  <div class="header-badges">
+    <span class="badge badge-must">MUST — obligatorio siempre</span>
+    <span class="badge badge-should">SHOULD — fuertemente recomendado</span>
+    <span class="badge badge-may">MAY — opcional</span>
+    <span class="badge badge-new">Nuevo: Paso a paso · Mi proyecto · Checklist</span>
+  </div>
+</div>
+
+<!-- NAV -->
+<div class="nav-wrap">
+  <div class="nav">
+    <button class="nav-btn" onclick="showSection(&#39;s1&#39;,this)">1 · Trazabilidad</button>
+    <button class="nav-btn" onclick="showSection(&#39;s2&#39;,this)">2 · Estándares</button>
+    <button class="nav-btn" onclick="showSection(&#39;s3&#39;,this)">3 · Variables</button>
+    <button class="nav-btn" onclick="showSection(&#39;s4&#39;,this)">4 · Constraints</button>
+    <button class="nav-btn" onclick="showSection(&#39;s5&#39;,this)">5 · Índices</button>
+    <button class="nav-btn" onclick="showSection(&#39;s6&#39;,this)">6 · Paso a paso<span class="new-dot"></span></button>
+    <button class="nav-btn" onclick="showSection(&#39;s7&#39;,this)">7 · En mi proyecto<span class="new-dot"></span></button>
+    <button class="nav-btn active" onclick="showSection(&#39;s8&#39;,this)">8 · Checklist<span class="new-dot"></span></button>
+  </div>
+</div>
+
+
+<!-- ═══════════════════ S1 TRAZABILIDAD ═══════════════════ -->
+<div id="s1" class="section">
+  <div class="section-title-row"><div class="section-num">1</div><h2>Trazabilidad con P_TRAZA_CORE</h2></div>
+  <p class="section-desc">Todo procedimiento o función nuevo o modificado <strong>debe</strong> registrar trazas. El sistema permite rastrear qué pasó, cuándo, en qué paso y cuánto tardó.</p>
+  <h3>¿Cómo fluye una traza?</h3>
+  <div class="flow">
+    <div class="flow-step">
+      <div class="flow-left"><div class="flow-dot dot-start">✦</div><div class="flow-line"></div></div>
+      <div class="flow-content"><div class="flow-label">Declarar variables obligatorias</div><div class="flow-sub">N_ID_PROCESO · N_TX · TS_INICIO — siempre las tres</div></div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-left"><div class="flow-dot dot-i">I</div><div class="flow-line"></div></div>
+      <div class="flow-content"><div class="flow-label">Traza de INICIO</div><div class="flow-sub">Inmediatamente después de inicializar N_TX. Tipo <strong>"I"</strong>.</div></div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-left"><div class="flow-dot dot-t">T</div><div class="flow-line" style="border-left:2px dashed var(--border);background:none;"></div></div>
+      <div class="flow-content"><div class="flow-label">Trazas intermedias (opcional)</div><div class="flow-sub">Tipo <strong>"T"</strong> — solo para hitos relevantes dentro de la lógica de negocio.</div></div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-left"><div class="flow-dot dot-f">F</div><div class="flow-line"></div></div>
+      <div class="flow-content"><div class="flow-label">Traza de FIN</div><div class="flow-sub">Antes del END exitoso. Tipo <strong>"F"</strong> — incluir P_DURACION_MS.</div></div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-left"><div class="flow-dot dot-e">E</div></div>
+      <div class="flow-content"><div class="flow-label">Traza de ERROR</div><div class="flow-sub">Dentro del EXCEPTION WHEN OTHERS. Tipo <strong>"E"</strong> — incluir SQLERRM y BACKTRACE. Terminar con RAISE.</div></div>
+    </div>
+  </div>
+  <h3>Componentes del sistema</h3>
+  <div class="grid2">
+    <div class="mini-card"><h4>FN_ID_PROCESO</h4><p style="font-size:12px;color:var(--muted)">Obtiene el ID del proceso parametrizado. Si no existe, el sistema registra <em>"DESCONOCIDO"</em> automáticamente.</p></div>
+    <div class="mini-card"><h4>FN_TRAE_TX</h4><p style="font-size:12px;color:var(--muted)">Conserva o genera el consecutivo de transacción. Recibe P_TX para propagar contexto entre subprocesos.</p></div>
+    <div class="mini-card"><h4>PR_REGISTRAR_TRAZA</h4><p style="font-size:12px;color:var(--muted)">Registra la traza con <strong>PRAGMA AUTONOMOUS_TRANSACTION</strong> — se graba aunque el proceso principal falle.</p></div>
+    <div class="mini-card"><h4>FN_DURACION_MS</h4><p style="font-size:12px;color:var(--muted)">Calcula la duración en milisegundos desde TS_INICIO hasta el momento actual.</p></div>
+  </div>
+  <div class="rule-card" onclick="toggleCard(this)">
+    <div class="rule-card-head"><span class="rule-tag tag-must">MUST</span><span class="rule-title">Plantilla base completa</span><span class="rule-chevron">▼</span></div>
+    <div class="rule-body">
+<pre><span class="kw">PROCEDURE</span> <span class="fn">PR_EJEMPLO_ESTANDAR</span>(P_TX <span class="kw">IN</span> <span class="tp">NUMBER</span> <span class="kw">DEFAULT NULL</span>) <span class="kw">IS</span>
+    N_ID_PROCESO <span class="tp">NUMBER</span>;
+    N_TX         <span class="tp">NUMBER</span>;
+    TS_INICIO    <span class="tp">TIMESTAMP</span> := <span class="fn">SYSTIMESTAMP</span>;
+<span class="kw">BEGIN</span>
+    N_ID_PROCESO := <span class="fn">P_TRAZA_CORE.FN_ID_PROCESO</span>(<span class="str">'PAQUETE.PR_EJEMPLO_ESTANDAR'</span>);
+    N_TX         := <span class="fn">P_TRAZA_CORE.FN_TRAE_TX</span>(P_TX);
+
+    <span class="fn">P_TRAZA_CORE.PR_REGISTRAR_TRAZA</span>(
+        P_ID             =&gt; N_ID_PROCESO,
+        P_TIPO_EJECUCION =&gt; <span class="str">'I'</span>,
+        P_MENSAJE        =&gt; <span class="str">'INICIO del proceso PR_EJEMPLO_ESTANDAR.'</span>,
+        P_TX             =&gt; N_TX
+    );
+
+    <span class="cm">-- Lógica de negocio aquí</span>
+
+    <span class="fn">P_TRAZA_CORE.PR_REGISTRAR_TRAZA</span>(
+        P_ID             =&gt; N_ID_PROCESO,
+        P_TIPO_EJECUCION =&gt; <span class="str">'F'</span>,
+        P_MENSAJE        =&gt; <span class="str">'FIN del proceso finalizado correctamente.'</span>,
+        P_TX             =&gt; N_TX,
+        P_DURACION_MS    =&gt; <span class="fn">P_TRAZA_CORE.FN_DURACION_MS</span>(TS_INICIO)
+    );
+<span class="kw">EXCEPTION</span>
+    <span class="kw">WHEN OTHERS THEN</span>
+        <span class="fn">P_TRAZA_CORE.PR_REGISTRAR_TRAZA</span>(
+            P_ID             =&gt; N_ID_PROCESO,
+            P_TIPO_EJECUCION =&gt; <span class="str">'E'</span>,
+            P_MENSAJE        =&gt; <span class="str">'ERROR: '</span> || <span class="fn">SQLERRM</span> ||
+                                <span class="str">' - BACKTRACE: '</span> || <span class="fn">SYS.DBMS_UTILITY.FORMAT_ERROR_BACKTRACE</span>,
+            P_TX             =&gt; N_TX,
+            P_DURACION_MS    =&gt; <span class="fn">P_TRAZA_CORE.FN_DURACION_MS</span>(TS_INICIO)
+        );
+        <span class="kw">RAISE</span>;
+<span class="kw">END</span> <span class="fn">PR_EJEMPLO_ESTANDAR</span>;</pre>
+    </div>
+  </div>
+  <div class="info-box"><strong>¿Por qué PRAGMA AUTONOMOUS_TRANSACTION?</strong><br>PR_REGISTRAR_TRAZA guarda la traza en una transacción independiente. Si el proceso principal hace ROLLBACK, las trazas de error igualmente quedan persistidas en la BD.</div>
+</div>
+
+
+<!-- ═══════════════════ S2 ESTÁNDARES ═══════════════════ -->
+<div id="s2" class="section">
+  <div class="section-title-row"><div class="section-num">2</div><h2>Estándares generales Oracle / PL/SQL</h2></div>
+  <p class="section-desc">Convenciones de nomenclatura, reglas de implementación, manejo de errores y modelado de datos.</p>
+  <h3>Nomenclatura de objetos</h3>
+  <table class="naming-table">
+    <thead><tr><th>Objeto</th><th>Prefijo / Patrón</th><th>Ejemplo</th></tr></thead>
+    <tbody>
+      <tr><td>Paquetes</td><td class="mono">P_NOMBRE</td><td class="mono">P_CLIENTES</td></tr>
+      <tr><td>Procedimientos</td><td class="mono">PR_NOMBRE</td><td class="mono">PR_ACTUALIZAR_CLIENTE</td></tr>
+      <tr><td>Funciones</td><td class="mono">FN_NOMBRE</td><td class="mono">FN_CALCULAR_SALDO</td></tr>
+      <tr><td>Cursores</td><td class="mono">C_NOMBRE</td><td class="mono">C_CLIENTES_ACTIVOS</td></tr>
+      <tr><td>Vistas</td><td class="mono">VW_NOMBRE</td><td class="mono">VW_RESUMEN_CUENTAS</td></tr>
+      <tr><td>Tablas globales</td><td class="mono">GL_...</td><td class="mono">GL_PARAMETROS</td></tr>
+      <tr><td>Tablas temporales</td><td class="mono">TMP_...</td><td class="mono">TMP_PROCESO</td></tr>
+      <tr><td>Secuencias PK</td><td class="mono">SHORTTABLA_SEQ</td><td class="mono">CLI_SEQ</td></tr>
+      <tr><td>PK</td><td class="mono">SHORTTABLA_PK</td><td class="mono">CLI_PK</td></tr>
+      <tr><td>FK</td><td class="mono">SHORTHIJA_SHORTPADRE_FK</td><td class="mono">CTA_CLI_FK</td></tr>
+      <tr><td>Índice de FK</td><td class="mono">SHORTHIJA_SHORTPADRE_FK_I</td><td class="mono">CTA_CLI_FK_I</td></tr>
+    </tbody>
+  </table>
+  <div class="rule-card" onclick="toggleCard(this)"><div class="rule-card-head"><span class="rule-tag tag-must">MUST</span><span class="rule-title">Todo código dentro de un package</span><span class="rule-chevron">▼</span></div><div class="rule-body">No se crean procedimientos o funciones sueltos (standalone). Siempre dentro de un paquete con spec y body separados.</div></div>
+  <div class="rule-card" onclick="toggleCard(this)"><div class="rule-card-head"><span class="rule-tag tag-must">MUST</span><span class="rule-title">No usar SELECT *. Columnas explícitas siempre</span><span class="rule-chevron">▼</span></div><div class="rule-body"><pre><span class="cm">-- MAL ✗</span>
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> CLIENTES;
+<span class="cm">-- BIEN ✓</span>
+<span class="kw">SELECT</span> CLIENTE_ID, NOMBRE, ESTADO <span class="kw">FROM</span> CLIENTES;</pre></div></div>
+  <div class="rule-card" onclick="toggleCard(this)"><div class="rule-card-head"><span class="rule-tag tag-must">MUST</span><span class="rule-title">Notación nombrada al invocar parámetros</span><span class="rule-chevron">▼</span></div><div class="rule-body"><pre><span class="cm">-- MAL ✗</span>
+<span class="fn">PR_ACTUALIZAR_CLIENTE</span>(12345, <span class="str">'A'</span>, <span class="kw">NULL</span>);
+<span class="cm">-- BIEN ✓</span>
+<span class="fn">PR_ACTUALIZAR_CLIENTE</span>(P_CLIENTE_ID =&gt; 12345, P_ESTADO =&gt; <span class="str">'A'</span>, P_TX =&gt; <span class="kw">NULL</span>);</pre></div></div>
+  <div class="rule-card" onclick="toggleCard(this)"><div class="rule-card-head"><span class="rule-tag tag-must">MUST</span><span class="rule-title">Cerrar bloques con nombre explícito</span><span class="rule-chevron">▼</span></div><div class="rule-body"><pre><span class="kw">END</span> <span class="fn">PR_ACTUALIZAR_CLIENTE</span>; <span class="cm">-- procedimiento</span>
+<span class="kw">END</span> <span class="fn">FN_CALCULAR_SALDO</span>;     <span class="cm">-- función</span>
+<span class="kw">END</span> <span class="fn">P_CLIENTES</span>;            <span class="cm">-- paquete</span></pre></div></div>
+  <div class="rule-card" onclick="toggleCard(this)"><div class="rule-card-head"><span class="rule-tag tag-must">MUST</span><span class="rule-title">Toda tabla permanente: PK con NUMBER(10) consecutivo</span><span class="rule-chevron">▼</span></div><div class="rule-body"><pre><span class="kw">CREATE TABLE</span> CLIENTES (
+    CLI_CONSECUTIVO <span class="tp">NUMBER</span>(10) <span class="kw">NOT NULL</span>,
+    NOMBRE          <span class="tp">VARCHAR2</span>(200),
+    <span class="kw">CONSTRAINT</span> CLI_PK <span class="kw">PRIMARY KEY</span>(CLI_CONSECUTIVO)
+);</pre></div></div>
+  <div class="warn-box"><strong>Evitar DEFAULT en columnas.</strong> Los valores por defecto se definen en la lógica de negocio (paquetes), no en la columna. Esto da más control y visibilidad sobre qué valor se asigna.</div>
+</div>
+
+
+<!-- ═══════════════════ S3 VARIABLES ═══════════════════ -->
+<div id="s3" class="section">
+  <div class="section-title-row"><div class="section-num">3</div><h2>Convención de variables PL/SQL</h2></div>
+  <p class="section-desc">Toda variable inicia con prefijo según su tipo semántico. Nombres en MAYÚSCULAS con separador guion bajo.</p>
+  <h3>Prefijos obligatorios</h3>
+  <div class="prefix-grid">
+    <div class="prefix-card"><span class="prefix-tag">P_</span><div class="prefix-info"><div class="prefix-name">Parámetros</div><div class="prefix-ex">P_CLIENTE_ID, P_TX</div></div></div>
+    <div class="prefix-card"><span class="prefix-tag">N_</span><div class="prefix-info"><div class="prefix-name">Numéricos</div><div class="prefix-ex">N_TOTAL, N_ID_PROCESO</div></div></div>
+    <div class="prefix-card"><span class="prefix-tag">V_</span><div class="prefix-info"><div class="prefix-name">Texto (VARCHAR)</div><div class="prefix-ex">V_MENSAJE, V_ESTADO</div></div></div>
+    <div class="prefix-card"><span class="prefix-tag">D_</span><div class="prefix-info"><div class="prefix-name">Fechas</div><div class="prefix-ex">D_FECHA_CORTE</div></div></div>
+    <div class="prefix-card"><span class="prefix-tag">TS_</span><div class="prefix-info"><div class="prefix-name">Timestamps</div><div class="prefix-ex">TS_INICIO, TS_FIN</div></div></div>
+    <div class="prefix-card"><span class="prefix-tag">B_</span><div class="prefix-info"><div class="prefix-name">Booleanos</div><div class="prefix-ex">B_EXISTE, B_PROCESADO</div></div></div>
+    <div class="prefix-card"><span class="prefix-tag">R_</span><div class="prefix-info"><div class="prefix-name">Registros %ROWTYPE</div><div class="prefix-ex">R_CLIENTE</div></div></div>
+    <div class="prefix-card"><span class="prefix-tag">T_</span><div class="prefix-info"><div class="prefix-name">Colecciones / tablas</div><div class="prefix-ex">T_CLIENTES</div></div></div>
+    <div class="prefix-card"><span class="prefix-tag">C_</span><div class="prefix-info"><div class="prefix-name">Constantes</div><div class="prefix-ex">C_ESTADO_ACTIVO</div></div></div>
+    <div class="prefix-card"><span class="prefix-tag">E_</span><div class="prefix-info"><div class="prefix-name">Excepciones de negocio</div><div class="prefix-ex">E_DATOS_INVALIDOS</div></div></div>
+    <div class="prefix-card"><span class="prefix-tag">G_</span><div class="prefix-info"><div class="prefix-name">Globales de package</div><div class="prefix-ex">G_CACHE_ACTIVO</div></div></div>
+  </div>
+  <hr class="divider">
+  <h3>Orden en la sección declarativa</h3>
+  <ul class="order-list">
+    <li><div class="order-num">1</div><span>Cursores <span class="mono">C_...</span></span></li>
+    <li><div class="order-num">2</div><span>Registros <span class="mono">R_...</span></span></li>
+    <li><div class="order-num">3</div><span>Colecciones <span class="mono">T_...</span></span></li>
+    <li><div class="order-num">4</div><span>Constantes <span class="mono">C_...</span></span></li>
+    <li><div class="order-num">5</div><span>Variables escalares <span class="mono">N_, V_, D_, TS_, B_</span></span></li>
+    <li><div class="order-num">6</div><span>Variables de trazabilidad: <span class="mono">N_ID_PROCESO, N_TX, TS_INICIO</span></span></li>
+    <li><div class="order-num">7</div><span>Excepciones de negocio <span class="mono">E_...</span></span></li>
+  </ul>
+</div>
+
+
+<!-- ═══════════════════ S4 CONSTRAINTS ═══════════════════ -->
+<div id="s4" class="section">
+  <div class="section-title-row"><div class="section-num">4</div><h2>Constraints</h2></div>
+  <p class="section-desc">Reglas de nombrado para restricciones de integridad en tablas Oracle.</p>
+  <div class="pattern-card"><div class="pattern-label">Primary Key — PK</div><div class="pattern-val">SHORTtabla_PK</div><div class="pattern-ex">Ej: tabla CLIENTES → CLI_PK</div></div>
+  <div class="pattern-card"><div class="pattern-label">Foreign Key — FK</div><div class="pattern-val">SHORTtablahija_SHORTtablapapa_FK</div><div class="pattern-ex">Ej: CUENTAS referencia CLIENTES → CTA_CLI_FK</div></div>
+  <div class="pattern-card"><div class="pattern-label">Unique Key — UK</div><div class="pattern-val">SHORTtabla_NOMBRE_UK</div><div class="pattern-ex">Ej: email único en CLIENTES → CLI_EMAIL_UK</div></div>
+  <div class="pattern-card"><div class="pattern-label">Otros constraints (check, not null, etc.)</div><div class="pattern-val">AVCON_SHORTtabla_PRIMERALETRACOLUMNA_00X</div><div class="pattern-ex">Consecutivo desde 000. Ej: AVCON_CLI_E_000 (columna ESTADO)</div></div>
+  <div class="info-box"><strong>¿Qué es SHORTtabla?</strong> Es una abreviatura de 3–4 letras del nombre de la tabla. CLIENTES → CLI, CUENTAS → CTA, MOVIMIENTOS → MOV. Esta abreviatura se usa de forma consistente en todos los objetos relacionados a esa tabla.</div>
+</div>
+
+
+<!-- ═══════════════════ S5 ÍNDICES ═══════════════════ -->
+<div id="s5" class="section">
+  <div class="section-title-row"><div class="section-num">5</div><h2>Índices</h2></div>
+  <p class="section-desc">Los índices aceleran las consultas. Su nombrado y ubicación deben seguir las reglas del equipo.</p>
+  <div class="pattern-card"><div class="pattern-label">Índice de FK</div><div class="pattern-val">SHORTtablahija_SHORTtablapapa_FK_I</div><div class="pattern-ex">Ej: CTA_CLI_FK_I</div></div>
+  <div class="pattern-card"><div class="pattern-label">Otros índices</div><div class="pattern-val">SHORTtabla_NOMBRE_I</div><div class="pattern-ex">Ej: CLI_FECHA_REGISTRO_I</div></div>
+  <div class="rule-card" onclick="toggleCard(this)"><div class="rule-card-head"><span class="rule-tag tag-must">MUST</span><span class="rule-title">Ubicación por tablespace según tipo de tabla</span><span class="rule-chevron">▼</span></div>
+  <div class="rule-body"><table class="naming-table" style="margin:8px 0 0"><thead><tr><th>Tabla</th><th>Tablespace de índices</th></tr></thead><tbody><tr><td>Tablas generales</td><td class="mono">INDICES_COEASY</td></tr><tr><td>MOVIMIENTOS_CUENTAS_FONDOS</td><td class="mono">INDICES_MVTOS_FONDOS</td></tr><tr><td>ORDENES_FONDOS</td><td class="mono">INDICES_MVTOS_FONDOS</td></tr></tbody></table></div></div>
+  <div class="rule-card" onclick="toggleCard(this)"><div class="rule-card-head"><span class="rule-tag tag-must">MUST</span><span class="rule-title">Toda FK debe tener su índice. Toda columna fecha también.</span><span class="rule-chevron">▼</span></div><div class="rule-body">Oracle NO crea índices automáticos sobre FK. Sin índice, los DELETE/UPDATE sobre la tabla padre hacen full scan de la hija, degradando rendimiento.<pre><span class="kw">CREATE INDEX</span> CTA_CLI_FK_I <span class="kw">ON</span> CUENTAS(CLI_CONSECUTIVO) <span class="kw">TABLESPACE</span> INDICES_COEASY;
+<span class="kw">CREATE INDEX</span> CTA_FECHA_APERTURA_I <span class="kw">ON</span> CUENTAS(FECHA_APERTURA) <span class="kw">TABLESPACE</span> INDICES_COEASY;</pre></div></div>
+</div>
+
+
+<!-- ═══════════════════ S6 PASO A PASO ═══════════════════ -->
+<div id="s6" class="section">
+  <div class="section-title-row"><div class="section-num">6</div><h2>Implementación paso a paso</h2></div>
+  <p class="section-desc">Cómo construir un procedimiento desde cero siguiendo el estándar completo. Cada paso muestra el código acumulado.</p>
+
+  <!-- STEPPER NAV -->
+  <div class="stepper-nav" id="stepperNav">
+    <div class="step-pip active" onclick="goStep(1)" id="pip1"><div class="step-circle">1</div><div class="step-label">Firma del pkg</div></div>
+    <div class="step-connector" id="con1"></div>
+    <div class="step-pip" onclick="goStep(2)" id="pip2"><div class="step-circle">2</div><div class="step-label">Spec del proc</div></div>
+    <div class="step-connector" id="con2"></div>
+    <div class="step-pip" onclick="goStep(3)" id="pip3"><div class="step-circle">3</div><div class="step-label">Declarativas</div></div>
+    <div class="step-connector" id="con3"></div>
+    <div class="step-pip" onclick="goStep(4)" id="pip4"><div class="step-circle">4</div><div class="step-label">Init traza</div></div>
+    <div class="step-connector" id="con4"></div>
+    <div class="step-pip" onclick="goStep(5)" id="pip5"><div class="step-circle">5</div><div class="step-label">Traza I</div></div>
+    <div class="step-connector" id="con5"></div>
+    <div class="step-pip" onclick="goStep(6)" id="pip6"><div class="step-circle">6</div><div class="step-label">Lógica + F</div></div>
+    <div class="step-connector" id="con6"></div>
+    <div class="step-pip" onclick="goStep(7)" id="pip7"><div class="step-circle">7</div><div class="step-label">EXCEPTION E</div></div>
+  </div>
+
+  <!-- STEP 1 -->
+  <div class="stepper-panel active" id="sp1">
+    <div class="step-header">
+      <div class="step-num-big">1</div>
+      <div><div class="step-title">Ubicar o crear el package</div><div class="step-subtitle">Todo código va dentro de un paquete (P_NOMBRE). Nunca suelto.</div></div>
+    </div>
+    <div class="tip-box"><strong>Regla clave:</strong> El nombre del paquete sigue el patrón <code>P_NOMBRE</code>. Siempre tiene spec (interfaz pública) y body (implementación) en archivos separados.</div>
+    <p style="font-size:13px;color:var(--muted);margin:1rem 0 8px">Spec del paquete (archivo: P_CLIENTES.pks):</p>
+    <pre><span class="cm">-- Objetivo: Gestión de clientes del sistema</span>
+<span class="kw">CREATE OR REPLACE PACKAGE</span> <span class="fn">P_CLIENTES</span> <span class="kw">AS</span>
+
+    <span class="cm">-- Actualiza el estado de un cliente</span>
+    <span class="kw">PROCEDURE</span> <span class="fn">PR_ACTUALIZAR_ESTADO</span>(
+        P_CLIENTE_ID <span class="kw">IN</span> CLIENTES.CLIENTE_ID%<span class="tp">TYPE</span>,
+        P_ESTADO     <span class="kw">IN</span> CLIENTES.ESTADO%<span class="tp">TYPE</span>,
+        P_TX         <span class="kw">IN</span> <span class="tp">NUMBER</span> <span class="kw">DEFAULT NULL</span>
+    );
+
+<span class="kw">END</span> <span class="fn">P_CLIENTES</span>;</pre>
+    <div class="step-btns"><button class="btn btn-primary" onclick="goStep(2)">Siguiente →</button></div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="stepper-panel" id="sp2">
+    <div class="step-header">
+      <div class="step-num-big">2</div>
+      <div><div class="step-title">Encabezado del body + firma del procedimiento</div><div class="step-subtitle">Incluir siempre P_TX IN NUMBER DEFAULT NULL al final de los parámetros.</div></div>
+    </div>
+    <div class="warn-box"><strong>P_TX es obligatorio</strong> en todos los procedimientos. Permite que el llamador propague su contexto de transacción. El DEFAULT NULL hace que sea opcional cuando se llama externamente.</div>
+    <p style="font-size:13px;color:var(--muted);margin:1rem 0 8px">Body del paquete (archivo: P_CLIENTES.pkb):</p>
+    <pre><span class="cm">-- Objetivo: Gestión de clientes del sistema</span>
+<span class="kw">CREATE OR REPLACE PACKAGE BODY</span> <span class="fn">P_CLIENTES</span> <span class="kw">AS</span>
+
+    <span class="cm">-- Actualiza el estado de un cliente</span>
+<span class="hl">    <span class="kw">PROCEDURE</span> <span class="fn">PR_ACTUALIZAR_ESTADO</span>(</span>
+<span class="hl">        P_CLIENTE_ID <span class="kw">IN</span> CLIENTES.CLIENTE_ID%<span class="tp">TYPE</span>,</span>
+<span class="hl">        P_ESTADO     <span class="kw">IN</span> CLIENTES.ESTADO%<span class="tp">TYPE</span>,</span>
+<span class="hl">        P_TX         <span class="kw">IN</span> <span class="tp">NUMBER</span> <span class="kw">DEFAULT NULL</span>  <span class="cm">-- SIEMPRE al final</span></span>
+<span class="hl">    ) <span class="kw">IS</span></span>
+        <span class="cm">-- variables van aquí (paso 3)</span>
+    <span class="kw">BEGIN</span>
+        <span class="kw">NULL</span>; <span class="cm">-- lógica va aquí (pasos 4-7)</span>
+    <span class="kw">END</span> <span class="fn">PR_ACTUALIZAR_ESTADO</span>;
+
+<span class="kw">END</span> <span class="fn">P_CLIENTES</span>;</pre>
+    <div class="step-btns"><button class="btn" onclick="goStep(1)">← Anterior</button><button class="btn btn-primary" onclick="goStep(3)">Siguiente →</button></div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="stepper-panel" id="sp3">
+    <div class="step-header">
+      <div class="step-num-big">3</div>
+      <div><div class="step-title">Sección declarativa en orden correcto</div><div class="step-subtitle">Cursores → Registros → Colecciones → Constantes → Escalares → Trazabilidad → Excepciones.</div></div>
+    </div>
+    <div class="info-box">Las variables de trazabilidad (<code>N_ID_PROCESO</code>, <code>N_TX</code>, <code>TS_INICIO</code>) van <strong>siempre al final</strong> de la sección declarativa, en posición 6. <code>TS_INICIO</code> se inicializa inline con SYSTIMESTAMP.</div>
+    <pre>    <span class="kw">PROCEDURE</span> <span class="fn">PR_ACTUALIZAR_ESTADO</span>(
+        P_CLIENTE_ID <span class="kw">IN</span> CLIENTES.CLIENTE_ID%<span class="tp">TYPE</span>,
+        P_ESTADO     <span class="kw">IN</span> CLIENTES.ESTADO%<span class="tp">TYPE</span>,
+        P_TX         <span class="kw">IN</span> <span class="tp">NUMBER</span> <span class="kw">DEFAULT NULL</span>
+    ) <span class="kw">IS</span>
+        <span class="cm">-- 4. Constantes</span>
+<span class="hl">        C_MODULO <span class="kw">CONSTANT</span> <span class="tp">VARCHAR2</span>(100) := <span class="str">'P_CLIENTES.PR_ACTUALIZAR_ESTADO'</span>;</span>
+
+        <span class="cm">-- 5. Variables escalares</span>
+<span class="hl">        V_ESTADO_ACTUAL CLIENTES.ESTADO%<span class="tp">TYPE</span>;</span>
+<span class="hl">        B_EXISTE        <span class="tp">BOOLEAN</span> := <span class="kw">FALSE</span>;</span>
+
+        <span class="cm">-- 6. Variables de trazabilidad (SIEMPRE las tres)</span>
+<span class="hl">        N_ID_PROCESO <span class="tp">NUMBER</span>;</span>
+<span class="hl">        N_TX         <span class="tp">NUMBER</span>;</span>
+<span class="hl">        TS_INICIO    <span class="tp">TIMESTAMP</span> := <span class="fn">SYSTIMESTAMP</span>;</span>
+
+        <span class="cm">-- 7. Excepciones de negocio</span>
+<span class="hl">        E_CLIENTE_INVALIDO <span class="kw">EXCEPTION</span>;</span>
+    <span class="kw">BEGIN</span>
+        <span class="kw">NULL</span>;
+    <span class="kw">END</span> <span class="fn">PR_ACTUALIZAR_ESTADO</span>;</pre>
+    <div class="step-btns"><button class="btn" onclick="goStep(2)">← Anterior</button><button class="btn btn-primary" onclick="goStep(4)">Siguiente →</button></div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div class="stepper-panel" id="sp4">
+    <div class="step-header">
+      <div class="step-num-big">4</div>
+      <div><div class="step-title">Inicializar N_ID_PROCESO y N_TX</div><div class="step-subtitle">Primeras dos líneas del BEGIN, siempre en este orden.</div></div>
+    </div>
+    <div class="info-box"><strong>FN_ID_PROCESO</strong> recibe el nombre completo <code>'PAQUETE.PROCEDIMIENTO'</code> — esto es lo que aparece en las trazas. Si no está parametrizado en la tabla de procesos, el sistema registra <em>"DESCONOCIDO"</em> pero no falla.<br><br><strong>FN_TRAE_TX</strong> recibe P_TX. Si viene NULL (llamada externa), genera un nuevo consecutivo. Si viene con valor, lo conserva para que todas las subtrazas queden bajo el mismo contexto.</div>
+    <pre>    <span class="kw">BEGIN</span>
+        <span class="cm">-- Inicialización de trazabilidad (SIEMPRE primero)</span>
+<span class="hl">        N_ID_PROCESO := <span class="fn">P_TRAZA_CORE.FN_ID_PROCESO</span>(<span class="str">'P_CLIENTES.PR_ACTUALIZAR_ESTADO'</span>);</span>
+<span class="hl">        N_TX         := <span class="fn">P_TRAZA_CORE.FN_TRAE_TX</span>(P_TX);</span>
+
+        <span class="cm">-- Lógica de negocio viene aquí...</span>
+    <span class="kw">END</span> <span class="fn">PR_ACTUALIZAR_ESTADO</span>;</pre>
+    <div class="step-btns"><button class="btn" onclick="goStep(3)">← Anterior</button><button class="btn btn-primary" onclick="goStep(5)">Siguiente →</button></div>
+  </div>
+
+  <!-- STEP 5 -->
+  <div class="stepper-panel" id="sp5">
+    <div class="step-header">
+      <div class="step-num-big">5</div>
+      <div><div class="step-title">Registrar traza de INICIO (tipo "I")</div><div class="step-subtitle">Inmediatamente después de inicializar N_TX. Sin duración.</div></div>
+    </div>
+    <div class="tip-box">La traza "I" no lleva P_DURACION_MS — apenas está comenzando. El mensaje debe decir claramente qué proceso inicia. Puede incluir parámetros clave para facilitar diagnóstico.</div>
+    <pre>    <span class="kw">BEGIN</span>
+        N_ID_PROCESO := <span class="fn">P_TRAZA_CORE.FN_ID_PROCESO</span>(<span class="str">'P_CLIENTES.PR_ACTUALIZAR_ESTADO'</span>);
+        N_TX         := <span class="fn">P_TRAZA_CORE.FN_TRAE_TX</span>(P_TX);
+
+        <span class="cm">-- Traza de inicio</span>
+<span class="hl">        <span class="fn">P_TRAZA_CORE.PR_REGISTRAR_TRAZA</span>(</span>
+<span class="hl">            P_ID             =&gt; N_ID_PROCESO,</span>
+<span class="hl">            P_TIPO_EJECUCION =&gt; <span class="str">'I'</span>,</span>
+<span class="hl">            P_MENSAJE        =&gt; <span class="str">'INICIO PR_ACTUALIZAR_ESTADO. Cliente: '</span> || P_CLIENTE_ID,</span>
+<span class="hl">            P_TX             =&gt; N_TX</span>
+<span class="hl">        );</span>
+
+        <span class="cm">-- Lógica de negocio...</span>
+
+    <span class="kw">END</span> <span class="fn">PR_ACTUALIZAR_ESTADO</span>;</pre>
+    <div class="step-btns"><button class="btn" onclick="goStep(4)">← Anterior</button><button class="btn btn-primary" onclick="goStep(6)">Siguiente →</button></div>
+  </div>
+
+  <!-- STEP 6 -->
+  <div class="stepper-panel" id="sp6">
+    <div class="step-header">
+      <div class="step-num-big">6</div>
+      <div><div class="step-title">Lógica de negocio + traza de FIN (tipo "F")</div><div class="step-subtitle">La traza F siempre lleva P_DURACION_MS calculada desde TS_INICIO.</div></div>
+    </div>
+    <div class="tip-box"><strong>Traza "T" para hitos intermedios:</strong> Si la lógica tiene pasos relevantes (ej: "procesados 500 registros", "validación exitosa"), se puede agregar una traza tipo "T" entre la "I" y la "F" para mayor granularidad en el monitoreo.</div>
+    <pre>        <span class="cm">-- Lógica de negocio</span>
+        <span class="kw">SELECT</span> ESTADO <span class="kw">INTO</span> V_ESTADO_ACTUAL
+        <span class="kw">FROM</span>   CLIENTES
+        <span class="kw">WHERE</span>  CLIENTE_ID = P_CLIENTE_ID;
+
+        <span class="kw">IF</span> V_ESTADO_ACTUAL = P_ESTADO <span class="kw">THEN</span>
+            <span class="kw">RAISE</span> E_CLIENTE_INVALIDO;
+        <span class="kw">END IF</span>;
+
+        <span class="kw">UPDATE</span> CLIENTES
+        <span class="kw">SET</span>    ESTADO = P_ESTADO
+        <span class="kw">WHERE</span>  CLIENTE_ID = P_CLIENTE_ID;
+
+        <span class="cm">-- Traza de FIN (con duración)</span>
+<span class="hl">        <span class="fn">P_TRAZA_CORE.PR_REGISTRAR_TRAZA</span>(</span>
+<span class="hl">            P_ID             =&gt; N_ID_PROCESO,</span>
+<span class="hl">            P_TIPO_EJECUCION =&gt; <span class="str">'F'</span>,</span>
+<span class="hl">            P_MENSAJE        =&gt; <span class="str">'FIN PR_ACTUALIZAR_ESTADO. Estado actualizado a: '</span> || P_ESTADO,</span>
+<span class="hl">            P_TX             =&gt; N_TX,</span>
+<span class="hl">            P_DURACION_MS    =&gt; <span class="fn">P_TRAZA_CORE.FN_DURACION_MS</span>(TS_INICIO)  <span class="cm">-- obligatorio en F</span></span>
+<span class="hl">        );</span>
+
+    <span class="kw">END</span> <span class="fn">PR_ACTUALIZAR_ESTADO</span>;</pre>
+    <div class="step-btns"><button class="btn" onclick="goStep(5)">← Anterior</button><button class="btn btn-primary" onclick="goStep(7)">Siguiente →</button></div>
+  </div>
+
+  <!-- STEP 7 -->
+  <div class="stepper-panel" id="sp7">
+    <div class="step-header">
+      <div class="step-num-big">7</div>
+      <div><div class="step-title">Bloque EXCEPTION con traza de ERROR (tipo "E")</div><div class="step-subtitle">Siempre capturar SQLERRM + BACKTRACE. Siempre terminar con RAISE.</div></div>
+    </div>
+    <div class="warn-box"><strong>RAISE al final del WHEN OTHERS es obligatorio.</strong> Sin él, el error queda "tragado" y el llamador nunca sabe que algo falló. El RAISE propaga el error hacia arriba en la cadena de llamadas.</div>
+    <pre><span class="kw">EXCEPTION</span>
+        <span class="cm">-- Excepciones de negocio propias (opcional si aplica)</span>
+        <span class="kw">WHEN</span> E_CLIENTE_INVALIDO <span class="kw">THEN</span>
+            <span class="fn">P_TRAZA_CORE.PR_REGISTRAR_TRAZA</span>(
+                P_ID             =&gt; N_ID_PROCESO,
+                P_TIPO_EJECUCION =&gt; <span class="str">'E'</span>,
+                P_MENSAJE        =&gt; <span class="str">'Cliente ya tiene ese estado.'</span>,
+                P_TX             =&gt; N_TX,
+                P_DURACION_MS    =&gt; <span class="fn">P_TRAZA_CORE.FN_DURACION_MS</span>(TS_INICIO)
+            );
+            <span class="kw">RAISE</span>;
+
+        <span class="cm">-- Captura general (SIEMPRE presente)</span>
+<span class="hl">        <span class="kw">WHEN OTHERS THEN</span></span>
+<span class="hl">            <span class="fn">P_TRAZA_CORE.PR_REGISTRAR_TRAZA</span>(</span>
+<span class="hl">                P_ID             =&gt; N_ID_PROCESO,</span>
+<span class="hl">                P_TIPO_EJECUCION =&gt; <span class="str">'E'</span>,</span>
+<span class="hl">                P_MENSAJE        =&gt; <span class="str">'ERROR en PR_ACTUALIZAR_ESTADO. SQLERRM: '</span> || <span class="fn">SQLERRM</span> ||</span>
+<span class="hl">                                    <span class="str">' - BACKTRACE: '</span> || <span class="fn">SYS.DBMS_UTILITY.FORMAT_ERROR_BACKTRACE</span>,</span>
+<span class="hl">                P_TX             =&gt; N_TX,</span>
+<span class="hl">                P_DURACION_MS    =&gt; <span class="fn">P_TRAZA_CORE.FN_DURACION_MS</span>(TS_INICIO)</span>
+<span class="hl">            );</span>
+<span class="hl">            <span class="kw">RAISE</span>;  <span class="cm">-- SIEMPRE propagar</span></span>
+    <span class="kw">END</span> <span class="fn">PR_ACTUALIZAR_ESTADO</span>;</pre>
+    <div class="tip-box"><strong>¡Procedimiento completo!</strong> Ya tienes firma correcta, sección declarativa en orden, inicialización de trazabilidad, traza I, lógica de negocio, traza F y bloque EXCEPTION con traza E + RAISE.</div>
+    <div class="step-btns"><button class="btn" onclick="goStep(6)">← Anterior</button><button class="btn btn-primary" onclick="showSection(&#39;s8&#39;, document.querySelectorAll(&#39;.nav-btn&#39;)[7])">Ir al Checklist →</button></div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════ S7 EN MI PROYECTO ═══════════════════ -->
+<div id="s7" class="section">
+  <div class="section-title-row"><div class="section-num">7</div><h2>¿Qué considerar en el proyecto?</h2></div>
+  <p class="section-desc">Aspectos prácticos y contexto que debes tener en cuenta al aplicar este estándar en los paquetes existentes del proyecto.</p>
+
+  <div class="consider-card">
+    <h4><div class="consider-num">1</div>Definir los SHORTs de cada tabla antes de crear objetos</h4>
+    <div class="consider-body">
+      El SHORT es una abreviatura de 3–4 letras que identifica cada tabla. Debe estar definido y acordado en el equipo antes de crear constraints, índices o secuencias, porque cambiar el SHORT después implica renombrar todos los objetos dependientes.
+      <table class="naming-table" style="margin-top:10px">
+        <thead><tr><th>Tabla</th><th>SHORT sugerido</th><th>PK resultante</th></tr></thead>
+        <tbody>
+          <tr><td>CLIENTES</td><td class="mono">CLI</td><td class="mono">CLI_PK</td></tr>
+          <tr><td>CUENTAS</td><td class="mono">CTA</td><td class="mono">CTA_PK</td></tr>
+          <tr><td>MOVIMIENTOS</td><td class="mono">MOV</td><td class="mono">MOV_PK</td></tr>
+          <tr><td>TRANSACCIONES</td><td class="mono">TRX</td><td class="mono">TRX_PK</td></tr>
+          <tr><td>PARAMETROS</td><td class="mono">PAR</td><td class="mono">PAR_PK</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="consider-card">
+    <h4><div class="consider-num">2</div>Registrar el proceso en P_TRAZA_CORE antes de ejecutar</h4>
+    <div class="consider-body">
+      FN_ID_PROCESO busca el nombre del procedimiento en una tabla de procesos parametrizados. Si no lo encuentra, funciona igual pero registra el proceso como <em>"DESCONOCIDO"</em> en las trazas — esto dificulta el monitoreo y las alertas automáticas.<br><br>
+      <strong>¿Qué hacer?</strong> Antes de poner en producción un nuevo procedimiento, registrar el proceso en la tabla de parámetros de P_TRAZA_CORE con el nombre exacto que se usa en FN_ID_PROCESO:
+      <pre><span class="kw">INSERT INTO</span> T_PROCESOS_TRAZA (NOMBRE_PROCESO, DESCRIPCION)
+<span class="kw">VALUES</span> (<span class="str">'P_CLIENTES.PR_ACTUALIZAR_ESTADO'</span>, <span class="str">'Actualiza el estado de un cliente'</span>);</pre>
+    </div>
+  </div>
+
+  <div class="consider-card">
+    <h4><div class="consider-num">3</div>Código legacy sin trazas: qué hacer al modificarlo</h4>
+    <div class="consider-body">
+      El estándar aplica a todo código <strong>nuevo o modificado</strong>. Cuando debas tocar un procedimiento legacy que no tiene trazas, aprovecha ese momento para agregarlas siguiendo la plantilla. No es necesario refactorizar código que no vas a tocar.
+      <div class="grid2" style="margin-top:12px">
+        <div>
+          <div class="diff-label diff-bad">Código legacy (sin modificar)</div>
+          <pre><span class="cm">-- OK dejar así si no se toca</span>
+<span class="kw">PROCEDURE</span> <span class="fn">PR_VIEJO</span> <span class="kw">IS</span>
+<span class="kw">BEGIN</span>
+    <span class="kw">UPDATE</span> CLIENTES <span class="kw">SET</span> ...;
+<span class="kw">END</span> <span class="fn">PR_VIEJO</span>;</pre>
+        </div>
+        <div>
+          <div class="diff-label diff-good">Al modificar → agregar estándar</div>
+          <pre><span class="kw">PROCEDURE</span> <span class="fn">PR_VIEJO</span>(
+    P_TX <span class="kw">IN</span> <span class="tp">NUMBER</span> <span class="kw">DEFAULT NULL</span>
+) <span class="kw">IS</span>
+    N_ID_PROCESO <span class="tp">NUMBER</span>;
+    N_TX         <span class="tp">NUMBER</span>;
+    TS_INICIO    <span class="tp">TIMESTAMP</span> := <span class="fn">SYSTIMESTAMP</span>;
+<span class="kw">BEGIN</span>
+    <span class="cm">-- init + traza I + lógica + F</span>
+<span class="kw">END</span> <span class="fn">PR_VIEJO</span>;</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="consider-card">
+    <h4><div class="consider-num">4</div>Cómo propagar N_TX en cadenas de llamadas</h4>
+    <div class="consider-body">
+      Cuando un procedimiento A llama a un subprocedimiento B, debe pasarle N_TX. Así todas las trazas de esa operación quedan bajo el mismo consecutivo de transacción y se pueden filtrar juntas en el monitoreo.
+      <pre><span class="cm">-- En PR_PROCESAR_PEDIDO llama subprocedimientos:</span>
+<span class="fn">P_INVENTARIO.PR_RESERVAR_STOCK</span>(
+    P_PRODUCTO_ID =&gt; N_PRODUCTO,
+    P_CANTIDAD    =&gt; N_CANTIDAD,
+    P_TX          =&gt; N_TX  <span class="cm">-- &lt;-- propagar siempre</span>
+);
+
+<span class="fn">P_FACTURACION.PR_GENERAR_FACTURA</span>(
+    P_PEDIDO_ID =&gt; N_PEDIDO,
+    P_TX        =&gt; N_TX  <span class="cm">-- &lt;-- mismo N_TX</span>
+);</pre>
+      <div class="info-box" style="margin-top:8px">En el log de trazas podrás filtrar por N_TX y verás el INICIO del padre, luego los INICIO/FIN de cada hijo, y el FIN del padre — todo en orden cronológico bajo el mismo identificador.</div>
+    </div>
+  </div>
+
+  <div class="consider-card">
+    <h4><div class="consider-num">5</div>¿Cuándo usar traza "T" (hito intermedio)?</h4>
+    <div class="consider-body">
+      La traza "T" es opcional pero muy útil en procedimientos que procesan grandes volúmenes o tienen etapas bien diferenciadas. Agrega uno cuando quieras saber exactamente en qué paso estaba el proceso si algo falla a mitad.
+      <pre><span class="cm">-- Ejemplo en un proceso de carga masiva:</span>
+<span class="fn">P_TRAZA_CORE.PR_REGISTRAR_TRAZA</span>(
+    P_ID             =&gt; N_ID_PROCESO,
+    P_TIPO_EJECUCION =&gt; <span class="str">'T'</span>,
+    P_MENSAJE        =&gt; <span class="str">'Validación completada. Registros válidos: '</span> || N_VALIDOS ||
+                        <span class="str">'. Inválidos: '</span> || N_INVALIDOS,
+    P_TX             =&gt; N_TX,
+    P_DURACION_MS    =&gt; <span class="fn">P_TRAZA_CORE.FN_DURACION_MS</span>(TS_INICIO)
+);</pre>
+    </div>
+  </div>
+
+  <h3 style="margin-top:2rem">Errores comunes y cómo evitarlos</h3>
+  <div class="mistake-grid">
+    <div class="mistake-card">
+      <div class="mc-title">Olvidar RAISE en el EXCEPTION</div>
+      <div class="mc-body">El error queda "tragado". El llamador recibe éxito aunque el proceso falló internamente. Dificulta debugging y produce datos inconsistentes.</div>
+    </div>
+    <div class="mistake-card">
+      <div class="mc-title">No pasar P_TX a subprocedimientos</div>
+      <div class="mc-body">Cada subproceso genera su propio N_TX. Las trazas quedan dispersas y es imposible reconstruir la cadena completa de ejecución.</div>
+    </div>
+    <div class="mistake-card">
+      <div class="mc-title">Poner DEFAULT en columnas de tabla</div>
+      <div class="mc-body">El valor se asigna invisible en BD. Si cambia el requerimiento, hay que buscarlo en el DDL de la tabla, no en la lógica de negocio donde debería estar.</div>
+    </div>
+    <div class="mistake-card">
+      <div class="mc-title">Variables genéricas: V1, AUX, TMP</div>
+      <div class="mc-body">Después de 3 meses nadie (incluyendo tú mismo) sabe qué hace esa variable. Usar nombres funcionales: N_SALDO_DISPONIBLE, V_CODIGO_RESPUESTA.</div>
+    </div>
+    <div class="mistake-card">
+      <div class="mc-title">FK sin índice</div>
+      <div class="mc-body">Oracle no crea índices automáticos sobre FK. Un DELETE de un cliente sin índice en CUENTAS.CLI_CONSECUTIVO hace full scan de toda la tabla.</div>
+    </div>
+    <div class="mistake-card">
+      <div class="mc-title">Código comentado en el body</div>
+      <div class="mc-body">El código comentado genera confusión sobre si está activo o no. Si se eliminó con intención, usar Git para recuperarlo si hace falta.</div>
+    </div>
+  </div>
+
+  <h3 style="margin-top:1.5rem">Correcciones rápidas</h3>
+  <div class="mistake-grid">
+    <div class="fix-card">
+      <div class="mc-title">Al crear una nueva tabla</div>
+      <div class="mc-body">1. Definir SHORT · 2. PK con NUMBER(10) · 3. Comentarios de columnas · 4. Índice para FK · 5. Índice para columnas fecha · 6. Secuencia SHORT_SEQ</div>
+    </div>
+    <div class="fix-card">
+      <div class="mc-title">Al crear un nuevo procedimiento</div>
+      <div class="mc-body">1. Ubicarlo en el pkg correcto · 2. Agregar P_TX al final · 3. Sección declarativa en orden · 4. Init trazabilidad · 5. Traza I + F + E</div>
+    </div>
+    <div class="fix-card">
+      <div class="mc-title">Al revisar código de otro</div>
+      <div class="mc-body">Verificar: ¿tiene P_TX? ¿Tiene las 3 variables de traza? ¿Tiene traza I, F y E? ¿El EXCEPTION termina en RAISE? ¿Usa notación nombrada?</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════ S8 CHECKLIST ═══════════════════ -->
+<div id="s8" class="section active">
+  <div class="section-title-row"><div class="section-num">8</div><h2>Checklist de revisión</h2></div>
+  <p class="section-desc">Verifica estos puntos antes de hacer commit o entregar un procedimiento / tabla al equipo. Haz clic en cada ítem para marcarlo.</p>
+
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-row">
+      <div class="progress-fraction"><span id="chkDone">0</span>/<span id="chkTotal">27</span></div>
+      <div class="progress-label">ítems completados</div>
+      <button class="reset-btn" onclick="resetChecklist()">reiniciar</button>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  </div>
+
+  <!-- PROCEDIMIENTOS -->
+  <div class="checklist-group">
+    <div class="checklist-group-head">Procedimientos y funciones</div>
+    <div class="checklist-item" onclick="toggleCheck(this)"><div class="chk-box chk-must"></div><div class="chk-text"><div class="chk-title">El procedimiento está dentro de un package (P_NOMBRE)</div><div class="chk-sub">No existe como objeto standalone</div></div><span class="chk-tag chk-tag-must">MUST</span></div>
+    <div class="checklist-item" onclick="toggleCheck(this)"><div class="chk-box chk-must"></div><div class="chk-text"><div class="chk-title">Incluye parámetro P_TX IN NUMBER DEFAULT NULL</div><div class="chk-sub">Al final de la lista de parámetros</div></div><span class="chk-tag chk-tag-must">MUST</span></div>
+    <div class="checklist-item" onclick="toggleCheck(this)"><div class="chk-box chk-must"></div><div class="chk-text"><div class="chk-title">Sección declarativa en el orden correcto</div><div class="chk-sub">Cursores → Registros → Colecciones → Constantes → Escalares → Trazabilidad → Excepciones</div></div><span class="chk-tag chk-tag-must">MUST</span></div>
+    <div class="checklist-item" onclick="toggleCheck(this)"><div class="chk-box chk-must"></div><div class="chk-text"><div class="chk-title">Declara N_ID_PROCESO, N_TX y TS_INICIO</div><div class="chk-sub">TS_INICIO inicializado inline con SYSTIMESTAMP</div></div><span class="chk-tag chk-tag-must">MUST</span></div>
+    <div class="checklist-item" onclick="toggleCheck(this)"><div class="chk-box chk-must"></div><div class="chk-text"><div class="chk-title">Primeras líneas del BEGIN inicializan trazabilidad</div><div class="chk-sub">FN_ID_PROCESO con nombre completo 'PKG.PR_NOMBRE', luego FN_TRAE_TX</div></div><span class="chk-tag chk-tag-must">MUST</span></div>
+    <div class="checklist-item" onclick="toggleCheck(this)"><div class="chk-box chk-must"></div><div class="chk-text"><div class="chk-title">Registra traza tipo "I" después de inicializar N_TX</div><div class="chk-sub">Sin P_DURACION_MS</div></div><span class="chk-tag chk-tag-must">MUST</span></div>
+    <div class="checklist-item" onclick="toggleCheck(this)"><div class="chk-box chk-must"></div><div class="chk-text"><div class="chk-title">Registra traza tipo "F" antes del END exitoso</div><div class="chk-sub">Incluye P_DURACION_MS =&gt; FN_DURACION_MS(TS_INICIO)</div></div><span class="chk-tag chk-tag-must">MUST</span></div>
+    <div class="checklist-item" onclick="toggleCheck(this)"><div class="chk-box chk-must"></div><div class="chk-text"><div class="chk-title">Tiene bloque EXCEPTION WHEN OTHERS</div><div class="chk-sub">Con traza tipo "E" que incluye SQLERRM y FORMAT_ERROR_BACKTRACE</div></div><span class="chk-tag chk-tag-must">MUST</span></div>
+    <div class="checklist-item" onclick="toggleCheck(this)"><div class="chk-box chk-must"></div><div class="chk-text"><div class="chk-title">El WHEN OTHERS termina en RAISE</div><div class="chk-sub">No "traga" el error — lo propaga al llamador</div></div><span class="chk-tag chk-tag-must">MUST</span></div>
+    <div class="checklist-item" onclick="toggleCheck(this)"><div class="chk-box chk-must"></div><div class="chk-text"><div class="chk-title">Propaga N_TX en todos los llamados a subprocedimientos</div><div class="chk-sub">P_TX =&gt; N_TX en cada llamada interna</div></div><span class="chk-tag chk-tag-must">MUST</span></div>
+    <div class="checklist-item" onclick="toggleCheck(this)"><div class="chk-box chk-must"></div><div class="chk-text"><div class="chk-title">No usa SELECT *</div><div class="chk-sub">Lista columnas explícitas en todos los SELECT</div></div><span class="chk-tag chk-tag-must">MUST</span></div>
+    <div class="checklist-item" onclick="toggleCheck(this)"><div class="chk-box chk-must"></div><div class="chk-text"><div class="chk-title">Usa notación nombrada en todas las invocaciones</div><div class="chk-sub">P_PARAM =&gt; valor, no posicional</div></div><span class="chk-tag chk-tag-must">MUST</span></div>
+    <div class="checklist-item" onclick="toggleCheck(this)"><div class="chk-box chk-must"></div><div class="chk-text"><div class="chk-title">El END lleva el nombre explícito</div><div class="chk-sub">END PR_NOMBRE; / END FN_NOMBRE; / END P_NOMBRE;</div></div><span class="chk-tag chk-tag-must">MUST</span></div>
+    <div class="checklist-item" onclick="toggleCheck(this)"><div class="chk-box chk-must"></div><div class="chk-text"><div class="chk-title">No hay código muerto ni lógica comentada</div><div class="chk-sub">Solo comentarios de objetivo y hitos relevantes</div></div><span class="chk-tag chk-tag-must">MUST</span></div>
+    <div class="checklist-item" onclick="toggleCheck(this)"><div class="chk-box chk-must"></div><div class="chk-text"><div class="chk-title">Variables con prefijo correcto y nombres funcionales</div><div class="chk-sub">Sin V1, AUX, TMP, X — usar N_SALDO_DISPONIBLE, V_CODIGO_RESPUESTA, etc.</div></div><span class="chk-tag chk-tag-must">MUST</span></div>
+    <div class="checklist-item" onclick="toggleCheck(this)"><div class="chk-box"></div><div class="chk-text"><div class="chk-title">Usa %TYPE para variables vinculadas a columnas de tabla</div><div class="chk-sub">Ej: V_NOMBRE CLIENTES.NOMBRE%TYPE</div></div><span class="chk-tag chk-tag-should">SHOULD</span></div>
+    <div class="checklist-item" onclick="toggleCheck(this)"><div class="chk-box"></div><div class="chk-text"><div class="chk-title">Usa PLS_INTEGER para contadores e índices internos</div><div class="chk-sub">Más eficiente que NUMBER en ciclos</div></div><span class="chk-tag chk-tag-should">SHOULD</span></div>
+  </div>
+
+  <!-- TABLAS / MODELADO -->
+  <div class="checklist-group">
+    <div class="checklist-group-head">Tablas y modelado de datos</div>
+    <div class="checklist-item" onclick="toggleCheck(this)"><div class="chk-box chk-must"></div><div class="chk-text"><div class="chk-title">La tabla tiene llave primaria</div><div class="chk-sub">Con NUMBER(10) y nombre SHORT_CONSECUTIVO</div></div><span class="chk-tag chk-tag-must">MUST</span></div>
+    <div class="checklist-item" onclick="toggleCheck(this)"><div class="chk-box chk-must"></div><div class="chk-text"><div class="chk-title">PK nombrada: SHORTTABLA_PK</div><div class="chk-sub">Ej: CLI_PK para CLIENTES</div></div><span class="chk-tag chk-tag-must">MUST</span></div>
+    <div class="checklist-item" onclick="toggleCheck(this)"><div class="chk-box chk-must"></div><div class="chk-text"><div class="chk-title">Cada FK tiene su índice correspondiente</div><div class="chk-sub">SHORTHIJA_SHORTPADRE_FK_I en el tablespace correcto</div></div><span class="chk-tag chk-tag-must">MUST</span></div>
+    <div class="checklist-item" onclick="toggleCheck(this)"><div class="chk-box chk-must"></div><div class="chk-text"><div class="chk-title">Cada columna de fecha tiene índice</div><div class="chk-sub">SHORTTABLA_NOMBRE_COLUMNA_I</div></div><span class="chk-tag chk-tag-must">MUST</span></div>
+    <div class="checklist-item" onclick="toggleCheck(this)"><div class="chk-box chk-must"></div><div class="chk-text"><div class="chk-title">Índices en el tablespace correcto</div><div class="chk-sub">INDICES_COEASY para tablas generales. INDICES_MVTOS_FONDOS para MOV_CUENTAS_FONDOS y ORDENES_FONDOS</div></div><span class="chk-tag chk-tag-must">MUST</span></div>
+    <div class="checklist-item" onclick="toggleCheck(this)"><div class="chk-box chk-must"></div><div class="chk-text"><div class="chk-title">Columnas tienen comentarios descriptivos</div><div class="chk-sub">COMMENT ON COLUMN con valores permitidos cuando aplique</div></div><span class="chk-tag chk-tag-must">MUST</span></div>
+    <div class="checklist-item" onclick="toggleCheck(this)"><div class="chk-box chk-must"></div><div class="chk-text"><div class="chk-title">No hay DEFAULT en columnas de tabla</div><div class="chk-sub">El valor default va en la lógica de negocio del paquete</div></div><span class="chk-tag chk-tag-must">MUST</span></div>
+  </div>
+
+  <!-- PROYECTO -->
+  <div class="checklist-group">
+    <div class="checklist-group-head">Contexto del proyecto</div>
+    <div class="checklist-item" onclick="toggleCheck(this)"><div class="chk-box"></div><div class="chk-text"><div class="chk-title">El proceso está registrado en la tabla de P_TRAZA_CORE</div><div class="chk-sub">Para que aparezca como proceso nombrado (no "DESCONOCIDO") en el monitoreo</div></div><span class="chk-tag chk-tag-should">SHOULD</span></div>
+    <div class="checklist-item" onclick="toggleCheck(this)"><div class="chk-box"></div><div class="chk-text"><div class="chk-title">El SHORT de la nueva tabla está acordado con el equipo</div><div class="chk-sub">Definido antes de crear constraints e índices</div></div><span class="chk-tag chk-tag-should">SHOULD</span></div>
+    <div class="checklist-item" onclick="toggleCheck(this)"><div class="chk-box"></div><div class="chk-text"><div class="chk-title">La funcionalidad está documentada en el diccionario del equipo</div><div class="chk-sub">Entradas/salidas y descripción breve del procedimiento nuevo o modificado</div></div><span class="chk-tag chk-tag-should">SHOULD</span></div>
+  </div>
+</div>
+
+
+<script>
+  var currentStep = 1;
+
+  function showSection(id, btn) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    btn.classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function toggleCard(card) { card.classList.toggle('open'); }
+
+  function goStep(n) {
+    document.querySelectorAll('.stepper-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('sp' + n).classList.add('active');
+
+    for (var i = 1; i <= 7; i++) {
+      var pip = document.getElementById('pip' + i);
+      pip.classList.remove('active', 'done');
+      if (i < n) pip.classList.add('done');
+      else if (i === n) pip.classList.add('active');
+      var pip_circle = pip.querySelector('.step-circle');
+      if (i < n) pip_circle.textContent = '✓';
+      else pip_circle.textContent = i;
+    }
+    for (var j = 1; j <= 6; j++) {
+      var con = document.getElementById('con' + j);
+      if (con) con.classList.toggle('done', j < n);
+    }
+    currentStep = n;
+  }
+
+  /* CHECKLIST */
+  function toggleCheck(item) {
+    item.classList.toggle('checked');
+    var box = item.querySelector('.chk-box');
+    if (item.classList.contains('checked')) box.textContent = '✓';
+    else box.textContent = '';
+    updateProgress();
+  }
+
+  function updateProgress() {
+    var items = document.querySelectorAll('.checklist-item');
+    var done = document.querySelectorAll('.checklist-item.checked').length;
+    var total = items.length;
+    document.getElementById('chkDone').textContent = done;
+    document.getElementById('chkTotal').textContent = total;
+    document.getElementById('progressFill').style.width = Math.round(done / total * 100) + '%';
+  }
+
+  function resetChecklist() {
+    document.querySelectorAll('.checklist-item').forEach(function(item) {
+      item.classList.remove('checked');
+      item.querySelector('.chk-box').textContent = '';
+    });
+    updateProgress();
+  }
+
+  window.addEventListener('DOMContentLoaded', function() { updateProgress(); });
+</script>
+
+
+</body></html>
